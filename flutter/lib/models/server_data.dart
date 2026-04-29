@@ -7,6 +7,7 @@ class ServerData {
   final String encryptedPassword;
   final DateTime createdAt;
   final String status;
+  final String category;
 
   ServerData({
     required this.id,
@@ -17,6 +18,7 @@ class ServerData {
     required this.encryptedPassword,
     required this.createdAt,
     required this.status,
+    required this.category,
   });
 
   factory ServerData.fromMap(Map<String, dynamic> map) {
@@ -29,6 +31,7 @@ class ServerData {
       encryptedPassword: map['باسوورد'] ?? '',
       createdAt: DateTime.parse(map['تاريخ_الانشاء'] ?? DateTime.now().toIso8601String()),
       status: map['حالة_اليوزر'] ?? '',
+      category: map['تصنيف_الفرع'] ?? 'الكل',
     );
   }
 }

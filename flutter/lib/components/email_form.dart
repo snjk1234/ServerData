@@ -15,7 +15,7 @@ class EmailForm extends ConsumerStatefulWidget {
 }
 
 class _EmailFormState extends ConsumerState<EmailForm> {
-  AuthAction action = AuthAction.signUp;
+  AuthAction action = AuthAction.signIn;
   final TextEditingController emailController = TextEditingController();
   final TextEditingController pwController = TextEditingController();
   final TextEditingController confirmPwController = TextEditingController();

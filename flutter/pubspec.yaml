@@ -44,6 +44,11 @@ dependencies:
   url_launcher: ^6.2.5
   posthog_flutter: ^4.1.0
   supabase_auth_ui: ^0.4.1
+  encrypt: ^5.0.3
+  google_fonts: ^8.1.0
+  flutter_localizations:
+    sdk: flutter
+  aescryptojs: ^1.0.0
 
 dev_dependencies:
   flutter_test:

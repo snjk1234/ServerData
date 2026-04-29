@@ -19,15 +19,25 @@ Uri? initUrl = Uri.base; // needed to set intiial url state
 @riverpod
 GoRouter router(RouterRef ref) {
   final authState = ref.watch(authProvider);
+  
+  // تنظيف المسار المبدئي لضمان عدم تمرير مسارات محلية وهمية
+  String getSanitizedPath(String? rawPath) {
+    if (rawPath == null) return '/';
+    if (rawPath == '/login' || rawPath == '/loading' || rawPath == '/payments') {
+      return rawPath;
+    }
+    return '/';
+  }
+
   return GoRouter(
-    initialLocation: initUrl?.path, // DO NOT REMOVE
+    initialLocation: getSanitizedPath(initUrl?.path), // DO NOT REMOVE
     navigatorKey: navigatorKey,
     observers: [PosthogObserver()],
     redirect: (context, state) async {
       return authState.when(
         data: (user) {
           // build initial path
-          String? path = initUrl?.path;
+          String? path = getSanitizedPath(initUrl?.path);
           final queryString = initUrl?.query.trim() ?? "";
           if (queryString.isNotEmpty && path != null) {
             path += "?$queryString";

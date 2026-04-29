@@ -344,7 +344,7 @@ export default function ServersTable() {
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الباسوورد</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الحالة</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الخيارات</th>
-              </tr> 
+              </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
               {filteredData.map(row => {

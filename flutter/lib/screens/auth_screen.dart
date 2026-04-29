@@ -1,10 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:devtodollars/components/email_form.dart';
-import 'package:go_router/go_router.dart';
-import 'package:supabase_auth_ui/supabase_auth_ui.dart';
-
-final Uri initUrl = Uri.base;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,64 +9,66 @@ class AuthScreen extends StatefulWidget {
 }
 
 class _AuthScreenState extends State<AuthScreen> {
-  bool showEmailForm = false;
-  handleSignUpComplete(BuildContext context) {
-    if (!context.mounted) return;
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text("Check your Email!"),
-        content: const Text(
-            "We sent an email from hi@devtodollars.com to verify your email"),
-        actions: [
-          TextButton(onPressed: context.pop, child: const Text("Ok Matt."))
-        ],
-      ),
-    );
-  }
+  final bool showEmailForm = true;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SupaSocialsAuth(
-                socialProviders: const [
-                  OAuthProvider.github,
-                  OAuthProvider.google
-                ],
-                onSuccess: (_) {},
-                showSuccessSnackBar: false,
-                redirectUrl: (kIsWeb) ? initUrl.toString() : null,
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (showEmailForm)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 16),
-                        child: Divider(),
-                      ),
-                    if (showEmailForm)
-                      const EmailForm()
-                    else
-                      TextButton(
-                        onPressed: () => setState(() => showEmailForm = true),
-                        child: const Text("or continue with email"),
-                      ),
-                  ],
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.indigo[900]!, Colors.indigo[600]!, Colors.indigo[400]!],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Logo & Header
+                Icon(Icons.terminal_rounded, size: 80, color: Colors.indigo[100]),
+                const SizedBox(height: 16),
+                const Text(
+                  'لوحة تحكم السيرفرات',
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
-              )
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  'أهلاً بك مجدداً، يرجى تسجيل الدخول',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.indigo[100],
+                  ),
+                ),
+                const SizedBox(height: 32),
+
+                // Auth Card
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.15),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      )
+                    ],
+                  ),
+                  child: const EmailForm(),
+                ),
+              ],
+            ),
           ),
         ),
       ),
