@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
+import { ShareButton } from '@/components/ui/ShareButton';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -139,6 +140,14 @@ export default function LoginPage() {
           >
             {isLogin ? 'ليس لديك حساب؟ قم بإنشاء حساب جديد' : 'لديك حساب بالفعل؟ قم بتسجيل الدخول'}
           </button>
+
+          <div className="relative flex py-5 items-center">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="flex-shrink mx-4 text-gray-400 text-xs font-medium">أو شارك التطبيق</span>
+            <div className="flex-grow border-t border-gray-200"></div>
+          </div>
+
+          <ShareButton floating={false} className="w-full flex justify-center py-2.5 rounded-xl border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50/50" />
         </div>
       </div>
     </div>

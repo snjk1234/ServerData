@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:aescryptojs/aescryptojs.dart';
 import '../models/server_data.dart';
 import '../services/server_notifier.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ServerListScreen extends ConsumerStatefulWidget {
   const ServerListScreen({super.key});
@@ -42,6 +43,16 @@ class _ServerListScreenState extends ConsumerState<ServerListScreen> {
           style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white, fontSize: 20),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.share_rounded, color: Colors.white),
+            tooltip: 'مشاركة التطبيق',
+            onPressed: () {
+              Share.share(
+                'مرحباً! تفقد تطبيق مراقبة السيرفرات الرائع لإدارة فروعك وسيرفراتك بسهولة!',
+                subject: 'مشاركة التطبيق',
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, color: Colors.white),
             tooltip: 'تحديث',
@@ -353,13 +364,20 @@ class _ServerListScreenState extends ConsumerState<ServerListScreen> {
                                   ),
                                   
                                   const SizedBox(height: 8),
-                                  Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: IconButton(
-                                      icon: Icon(Icons.info_outline_rounded, color: Colors.indigo[300], size: 20),
-                                      tooltip: 'المزيد من التفاصيل',
-                                      onPressed: () => _showDetailsDialog(server),
-                                    ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(Icons.edit_rounded, color: Colors.indigo[600], size: 20),
+                                        tooltip: 'تعديل الفرع',
+                                        onPressed: () => _showEditServerDialog(context, server),
+                                      ),
+                                      IconButton(
+                                        icon: Icon(Icons.info_outline_rounded, color: Colors.indigo[300], size: 20),
+                                        tooltip: 'المزيد من التفاصيل',
+                                        onPressed: () => _showDetailsDialog(server),
+                                      ),
+                                    ],
                                   )
                                 ],
                               ),
@@ -528,6 +546,163 @@ class _ServerListScreenState extends ConsumerState<ServerListScreen> {
       ),
     );
   }
+  void _showEditServerDialog(BuildContext context, ServerData server) {
+    String selectedCategory = server.category;
+    String selectedStatus = server.status;
+    final branchNoController = TextEditingController(text: server.branchNo);
+    final nameArController = TextEditingController(text: server.branchNameAr);
+    final nameEnController = TextEditingController(text: server.branchNameEn);
+    final usernameController = TextEditingController(text: server.username);
+    
+    String initialPassword = '';
+    try {
+      initialPassword = decryptAESCryptoJS(server.encryptedPassword, 'sols');
+    } catch (e) {
+      initialPassword = '';
+    }
+    final passwordController = TextEditingController(text: initialPassword);
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('تعديل بيانات الفرع', style: TextStyle(fontWeight: FontWeight.w900)),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButtonFormField<String>(
+                      value: _categories.contains(selectedCategory) ? selectedCategory : 'فلورينا',
+                      decoration: const InputDecoration(labelText: 'تصنيف الفرع'),
+                      items: _categories.where((c) => c != 'الكل').map((c) {
+                        return DropdownMenuItem(value: c, child: Text(c));
+                      }).toList(),
+                      onChanged: (val) {
+                        setDialogState(() {
+                          selectedCategory = val!;
+                        });
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    
+                    TextField(
+                      controller: branchNoController,
+                      decoration: const InputDecoration(labelText: 'رقم الفرع'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: nameArController,
+                      decoration: const InputDecoration(labelText: 'اسم الفرع (عربي)'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: nameEnController,
+                      decoration: const InputDecoration(labelText: 'اسم الفرع (إنجليزي)'),
+                      onChanged: (val) {
+                        final text = val.toUpperCase();
+                        nameEnController.value = nameEnController.value.copyWith(
+                          text: text,
+                          selection: TextSelection.collapsed(offset: text.length),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: usernameController,
+                      decoration: const InputDecoration(labelText: 'اسم المستخدم للسيرفر'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    TextField(
+                      controller: passwordController,
+                      obscureText: true,
+                      decoration: const InputDecoration(labelText: 'الباسوورد للسيرفر'),
+                    ),
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: ['يعمل', 'الافتتاح قريبا', 'مغلق مؤقتا', 'مغلق نهائيا', 'مغلق نهائياً'].contains(selectedStatus) 
+                          ? selectedStatus 
+                          : 'يعمل',
+                      decoration: const InputDecoration(labelText: 'حالة الفرع'),
+                      items: ['يعمل', 'الافتتاح قريبا', 'مغلق مؤقتا', 'مغلق نهائياً'].map((s) {
+                        return DropdownMenuItem(value: s, child: Text(s));
+                      }).toList(),
+                      onChanged: (val) {
+                        setDialogState(() {
+                          selectedStatus = val!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('إلغاء', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    if (branchNoController.text.isEmpty ||
+                        nameArController.text.isEmpty ||
+                        nameEnController.text.isEmpty ||
+                        usernameController.text.isEmpty ||
+                        passwordController.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('يرجى إدخال جميع الحقول')),
+                      );
+                      return;
+                    }
+
+                    try {
+                      final encryptedPass = encryptAESCryptoJS(passwordController.text, 'sols');
+                      
+                      await Supabase.instance.client
+                        .from('server_data')
+                        .update({
+                          'رقم_الفرع': branchNoController.text,
+                          'تصنيف_الفرع': selectedCategory,
+                          'اسم_الفرع_ar': nameArController.text,
+                          'اسم_الفرع_en': nameEnController.text,
+                          'اسم_اليوزر': usernameController.text,
+                          'باسوورد': encryptedPass,
+                          'حالة_اليوزر': selectedStatus,
+                        })
+                        .eq('id', server.id);
+
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ref.refresh(serverDataProvider);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('تم تحديث الفرع بنجاح')),
+                        );
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('خطأ أثناء الحفظ: $e')),
+                        );
+                      }
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo[900]),
+                  child: const Text('تعديل', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                )
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   void _showAddServerDialog(BuildContext context) {
     String selectedCategory = 'فلورينا';
     String selectedStatus = 'يعمل';

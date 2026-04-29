@@ -49,6 +49,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   aescryptojs: ^1.0.0
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:
