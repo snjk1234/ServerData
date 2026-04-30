@@ -67,13 +67,13 @@ export const updateSession = async (request: NextRequest) => {
     // This will refresh session if expired - required for Server Components
     const { data: { user } } = await supabase.auth.getUser();
 
-    const isPublicRoute = request.nextUrl.pathname.startsWith('/login') || 
+    const isPublicRoute = request.nextUrl.pathname.startsWith('/admin/login') || 
                           request.nextUrl.pathname.startsWith('/auth');
 
-    if (!user && !isPublicRoute) {
+    if (!user && !isPublicRoute && request.nextUrl.pathname.startsWith('/admin')) {
       // no user, potentially respond by redirecting the user to the login page
       const url = request.nextUrl.clone();
-      url.pathname = '/login';
+      url.pathname = '/admin/login';
       return NextResponse.redirect(url);
     }
 

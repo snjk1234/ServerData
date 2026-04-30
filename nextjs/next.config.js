@@ -8,13 +8,7 @@ module.exports = {
     ];
   },
   redirects: async () => {
-    return [
-      {
-        source: '/',
-        destination: '/login',
-        permanent: false
-      }
-    ];
+    return [];
   }
 };
 

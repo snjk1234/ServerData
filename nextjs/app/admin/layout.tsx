@@ -13,7 +13,7 @@ export default async function AdminLayout({
 
   // إذا لم يكن المستخدم مسجلاً الدخول، يتم توجيهه إلى صفحة الدخول
   if (!user) {
-    return redirect('/login');
+    return redirect('/admin/login');
   }
 
   // هنا يمكننا أيضاً إضافة شرط للتحقق من أن المستخدم لديه صلاحية "admin"

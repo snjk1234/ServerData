@@ -4,6 +4,19 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import CryptoJS from 'crypto-js';
+import { AlertCircle, ShieldAlert, Printer } from 'lucide-react';
+
+// دالة لتحديد ما هو مطلوب حسب تصنيف الفرع
+function getRequiredFields(category: string): { street: boolean; city: boolean; taxNo: boolean } {
+  if (category === 'فرنشايز' || category === 'فيلانتو') {
+    return { street: true, city: true, taxNo: true };
+  } else if (category === 'فلورينا' || category === 'جملة') {
+    return { street: false, city: true, taxNo: false };
+  } else {
+    // اسكتشر، موزع معتمد
+    return { street: false, city: false, taxNo: false };
+  }
+}
 
 export default function AddServerPage() {
   const router = useRouter();
@@ -22,12 +35,25 @@ export default function AddServerPage() {
   const [password, setPassword] = useState('');
   const [status, setStatus] = useState('يعمل');
 
+  // الحقول الجديدة
+  const [streetName, setStreetName] = useState('');
+  const [cityName, setCityName] = useState('');
+  const [taxNo, setTaxNo] = useState('');
+  const [region, setRegion] = useState('');
+  const [serialNumber, setSerialNumber] = useState(100000);
+
   const [allRecords, setAllRecords] = useState<any[]>([]);
+  const [conflictRecord, setConflictRecord] = useState<any | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const [manualA4, setManualA4] = useState('');
+  const [manualBill, setManualBill] = useState('');
+
+  const requiredFields = getRequiredFields(branchCategory);
 
   // جلب البيانات الحالية لمعرفة التسلسل المتاح
   useEffect(() => {
     const fetchExisting = async () => {
-      const { data } = await supabase.from('server_data').select('رقم_الفرع, تصنيف_الفرع');
+      const { data } = await supabase.from('server_data').select('رقم_الفرع, اسم_الفرع_ar, تصنيف_الفرع, serial_number, طابعة_a4, طابعة_فواتير');
       if (data) setAllRecords(data);
     };
     fetchExisting();
@@ -35,7 +61,7 @@ export default function AddServerPage() {
 
   // حساب رقم السيرفر تلقائياً عند تغيير التصنيف
   useEffect(() => {
-    if (branchNoEdited) return; // عدم إعادة التوليد إذا تم التعديل يدوياً
+    if (branchNoEdited) return;
 
     let startNum = 1;
     if (branchCategory === 'اسكتشر') startNum = 300;
@@ -65,17 +91,60 @@ export default function AddServerPage() {
     }
 
     setBranchNo(formattedNo);
+
+    // حساب التسلسل التالي
+    let nextSerial = 100000;
+    if (allRecords.length > 0) {
+      const maxSerial = Math.max(...allRecords.map(r => r.serial_number || 0));
+      nextSerial = Math.max(100000, maxSerial + 100000);
+    }
+    setSerialNumber(nextSerial);
   }, [branchCategory, allRecords, branchNoEdited]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const [modalError, setModalError] = useState<string | null>(null);
+
+  const handleSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    
+    const a4Printer = manualA4 || `${branchNameEn.slice(0, 4)}BIGPRIN1`;
+    const billPrinter = manualBill || `${branchNameEn.slice(0, 4)}SPRI`;
+
+    if (branchNameEn.length < 4) {
+      setError('يجب أن يكون اسم الفرع بالإنجليزية 4 أحرف على الأقل.');
+      return;
+    }
+
+    if (a4Printer.length !== 12) {
+      setValidationError('يجب أن يتكون اسم طابعة A4 من 4 أحرف للفرع متبوعة بـ BIGPRIN1 (الإجمالي 12 حرف).');
+      return;
+    }
+
     setLoading(true);
     setError(null);
+    setModalError(null);
+    setValidationError(null);
 
     try {
-      // تشفير كلمة المرور قبل إرسالها لقاعدة البيانات باستخدام كلمة السر 'sols'
-      const encryptedPassword = CryptoJS.AES.encrypt(password, 'sols').toString();
+      // جلب البيانات الطازجة للتأكد من عدم التكرار
+      const { data: freshRecords, error: fetchError } = await supabase
+        .from('server_data')
+        .select('رقم_الفرع, اسم_الفرع_ar, طابعة_a4, طابعة_فواتير');
+      
+      if (fetchError) throw new Error('فشل جلب البيانات للتحقق من التكرار.');
 
+      if (freshRecords) {
+        setAllRecords(freshRecords);
+        const duplicate = freshRecords.find(r => r.طابعة_a4 === a4Printer || r.طابعة_فواتير === billPrinter);
+        if (duplicate) {
+          setConflictRecord(duplicate);
+          setManualA4(a4Printer);
+          setManualBill(billPrinter);
+          setLoading(false);
+          return;
+        }
+      }
+
+      const encryptedPassword = CryptoJS.AES.encrypt(password, 'sols').toString();
       const { error: insertError } = await supabase
         .from('server_data')
         .insert([
@@ -83,34 +152,152 @@ export default function AddServerPage() {
             رقم_الفرع: branchNo,
             تصنيف_الفرع: branchCategory,
             اسم_الفرع_ar: branchNameAr,
-            اسم_الفرع_en: branchNameEn.toUpperCase(), // إجبار الحروف الكبيرة
+            اسم_الفرع_en: branchNameEn.toUpperCase(),
             اسم_اليوزر: username,
             باسوورد: encryptedPassword,
             حالة_اليوزر: status,
-            طابعة_a4: `${branchNameEn.slice(0, 4)}BIGPRIN1`,
-            طابعة_فواتير: `${branchNameEn.slice(0, 4)}SPRI`,
+            طابعة_a4: a4Printer,
+            طابعة_فواتير: billPrinter,
+            اسم_الشارع: streetName || null,
+            اسم_المدينة: cityName || null,
+            الرقم_الضريبي: taxNo || null,
+            المنطقة: region || null,
+            serial_number: serialNumber,
           }
         ]);
 
       if (insertError) {
-        if (insertError.code === '23505') {
-          throw new Error('رقم الفرع مسجل مسبقاً، الرجاء استخدام رقم آخر.');
-        }
+        if (insertError.code === '23505') throw new Error('رقم الفرع مسجل مسبقاً.');
         throw new Error(insertError.message);
       }
 
-      // بعد النجاح، نعود إلى صفحة الجدول
-      router.push('/admin/servers');
+      setConflictRecord(null); // Clear conflict only on success
+      router.push('/admin/servers?success=added');
       router.refresh();
 
     } catch (err: any) {
-      setError(err.message || 'حدث خطأ غير متوقع');
+      const msg = err.message || 'حدث خطأ غير متوقع';
+      if (conflictRecord) {
+        setModalError(msg);
+      } else {
+        setError(msg);
+      }
+    } finally {
       setLoading(false);
     }
   };
 
+  // بادج يوضح ما هو مطلوب حسب التصنيف
+  const renderRequirementBadge = () => {
+    if (branchCategory === 'فرنشايز' || branchCategory === 'فيلانتو') {
+      return (
+        <span className="text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-2 py-0.5 rounded-full font-medium">
+          يلزم: الشارع + المدينة + الرقم الضريبي
+        </span>
+      );
+    } else if (branchCategory === 'فلورينا' || branchCategory === 'جملة') {
+      return (
+        <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 px-2 py-0.5 rounded-full font-medium">
+          يلزم: المدينة فقط
+        </span>
+      );
+    } else {
+      return (
+        <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-0.5 rounded-full font-medium">
+          لا يلزم تعبئة هذه الحقول
+        </span>
+      );
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-8 font-sans transition-colors duration-300" dir="rtl">
+    <div className="min-h-screen bg-gray-50 dark:bg-slate-900 p-8 font-sans transition-colors duration-300 relative" dir="rtl">
+      
+      {/* نافذة تنبيه خطأ التنسيق */}
+      {validationError && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-10 px-4 bg-black/20 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-amber-100 animate-in slide-in-from-top-10 duration-500">
+            <div className="p-6 text-center">
+              <div className="mx-auto w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mb-4">
+                <AlertCircle className="text-amber-500 w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">خطأ في التنسيق</h3>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mb-6 leading-relaxed">
+                {validationError}
+              </p>
+              <button
+                onClick={() => setValidationError(null)}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition-all shadow-md active:scale-95"
+              >
+                موافق
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* نافذة تعارض الطابعة */}
+      {conflictRecord && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4 bg-slate-900/20 backdrop-blur-[2px] animate-in fade-in duration-300">
+          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl w-full max-w-md overflow-hidden animate-in slide-in-from-top-10 duration-500">
+            <div className="p-8">
+              <div className="flex items-center gap-3 mb-6 text-slate-800 dark:text-slate-100">
+                <div className="bg-amber-100 dark:bg-amber-900/30 p-2 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-black">تعارض في اسم الطابعة</h3>
+              </div>
+              
+              <div className="space-y-4 mb-8">
+                {modalError && (
+                  <div className="p-3 bg-red-50 text-red-600 text-xs rounded-xl border border-red-100 animate-in fade-in zoom-in duration-300">
+                    {modalError}
+                  </div>
+                )}
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+                  اسم الطابعة موجود مسبقاً في فرع آخر:
+                  <span className="block mt-1 font-bold text-slate-800 dark:text-slate-200">
+                    ({conflictRecord.رقم_الفرع}) - {conflictRecord.اسم_الفرع_ar}
+                  </span>
+                </p>
+
+                <div className="pt-4">
+                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">تعديل اسم طابعة A4</label>
+                  <input
+                    type="text"
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm font-mono"
+                    value={manualA4}
+                    onChange={(e) => setManualA4(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setConflictRecord(null)}
+                  className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl transition-colors"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={() => handleSubmit()}
+                  disabled={loading}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-bold py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg active:scale-95 flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    'تعديل وحفظ'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-4 mb-8">
           <button
@@ -182,6 +369,27 @@ export default function AddServerPage() {
                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
                   * تم التوليد تلقائياً. يمكنك تعديله يدوياً إذا رغبت.
                 </p>
+              </div>
+
+              {/* المنطقة */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">المنطقة</label>
+                <select
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  value={region}
+                  onChange={(e) => setRegion(e.target.value)}
+                >
+                  <option value="">-- اختر المنطقة --</option>
+                  <option value="1-المدينة المنورة">1 - المدينة المنورة</option>
+                  <option value="1-المنطقة الوسطى">1 - المنطقة الوسطى</option>
+                  <option value="2-الرياض">2 - الرياض</option>
+                  <option value="2-الدمام">2 - الدمام</option>
+                  <option value="3-الجنوبية - أبها">3 - الجنوبية - أبها</option>
+                  <option value="4-جدة">4 - جدة</option>
+                  <option value="4-الغربية - مكة">4 - الغربية - مكة</option>
+                  <option value="5-الشمالية تبوك">5 - الشمالية تبوك</option>
+                  <option value="5-الطائف">5 - الطائف</option>
+                </select>
               </div>
 
               {/* اسم الفرع بالعربي */}
@@ -262,6 +470,84 @@ export default function AddServerPage() {
                 </p>
               </div>
 
+              {/* التسلسل */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">التسلسل (Serial)</label>
+                <input
+                  type="number"
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 font-mono"
+                  value={serialNumber}
+                  onChange={(e) => setSerialNumber(parseInt(e.target.value))}
+                />
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
+                  * تم الحساب تلقائياً ويمكنك تعديله.
+                </p>
+              </div>
+
+            </div>
+
+            {/* ─── قسم البيانات الإضافية (الشارع / المدينة / الرقم الضريبي) ─── */}
+            <div className="border-t border-gray-100 dark:border-slate-700 pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-base font-bold text-gray-700 dark:text-slate-200">البيانات الإضافية</h2>
+                {renderRequirementBadge()}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+                {/* اسم الشارع */}
+                <div className={!requiredFields.street && !requiredFields.city ? 'opacity-40 pointer-events-none' : ''}>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
+                    اسم الشارع
+                    {requiredFields.street && <span className="text-red-500 mr-1">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required={requiredFields.street}
+                    placeholder={requiredFields.street ? 'مثال: شارع الملك فهد' : 'غير مطلوب'}
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={streetName}
+                    onChange={(e) => setStreetName(e.target.value)}
+                    disabled={!requiredFields.street && !requiredFields.city}
+                  />
+                </div>
+
+                {/* اسم المدينة */}
+                <div className={!requiredFields.street && !requiredFields.city ? 'opacity-40 pointer-events-none' : ''}>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
+                    اسم المدينة
+                    {requiredFields.city && <span className="text-red-500 mr-1">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required={requiredFields.city}
+                    placeholder={requiredFields.city ? 'مثال: الرياض' : 'غير مطلوب'}
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={cityName}
+                    onChange={(e) => setCityName(e.target.value)}
+                    disabled={!requiredFields.street && !requiredFields.city}
+                  />
+                </div>
+
+                {/* الرقم الضريبي */}
+                <div className={!requiredFields.taxNo ? 'opacity-40 pointer-events-none' : ''}>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">
+                    الرقم الضريبي
+                    {requiredFields.taxNo && <span className="text-red-500 mr-1">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    required={requiredFields.taxNo}
+                    placeholder={requiredFields.taxNo ? 'مثال: 3000000000' : 'غير مطلوب'}
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={taxNo}
+                    onChange={(e) => setTaxNo(e.target.value)}
+                    disabled={!requiredFields.taxNo}
+                    dir="ltr"
+                  />
+                </div>
+
+              </div>
             </div>
 
             <div className="pt-6 border-t border-gray-100 dark:border-slate-700">

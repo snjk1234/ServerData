@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
-import { Eye, Copy } from 'lucide-react';
+import { Eye, Copy, Printer, Trash2 } from 'lucide-react';
+import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
 
 export default function ServersTable() {
   const supabase = createClient();
@@ -18,9 +19,26 @@ export default function ServersTable() {
   const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
   const [decryptedPasswords, setDecryptedPasswords] = useState<Record<number, string>>({});
 
+  // حالات الحذف
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteKey, setDeleteKey] = useState('');
+  const [serverToDelete, setServerToDelete] = useState<any>(null);
+  const [deleteError, setDeleteError] = useState('');
+
+  // حالات التنبيهات (Toast) والعد التنازلي
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isExiting, setIsExiting] = useState(false);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   // حالات التعديل والحذف
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [printingRecord, setPrintingRecord] = useState<any>(null);
   const [editForm, setEditForm] = useState({
     رقم_الفرع: '',
     اسم_الفرع_ar: '',
@@ -30,11 +48,36 @@ export default function ServersTable() {
     حالة_اليوزر: '',
     تصنيف_الفرع: '',
     طابعة_a4: '',
-    طابعة_فواتير: ''
+    طابعة_فواتير: '',
+    اسم_الشارع: '',
+    اسم_المدينة: '',
+    الرقم_الضريبي: '',
+    المنطقة: '',
+    serial_number: 100000
   });
+
+  // دالة لتحديد ما هو مطلوب حسب تصنيف الفرع
+  const getRequiredFields = (category: string) => {
+    if (category === 'فرنشايز' || category === 'فيلانتو') {
+      return { street: true, city: true, taxNo: true };
+    } else if (category === 'فلورينا' || category === 'جملة') {
+      return { street: false, city: true, taxNo: false };
+    } else {
+      return { street: false, city: false, taxNo: false };
+    }
+  };
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'added') {
+      showToast('تم إضافة الفرع الجديد بنجاح');
+      // تنظيف الرابط
+      window.history.replaceState({}, '', window.location.pathname);
+    }
   }, []);
 
   // إخفاء الباسوورد في حال الضغط في أي مكان آخر بالصفحة
@@ -95,7 +138,12 @@ export default function ServersTable() {
       حالة_اليوزر: record.حالة_اليوزر,
       تصنيف_الفرع: record.تصنيف_الفرع || 'فلورينا',
       طابعة_a4: record.طابعة_a4 || '',
-      طابعة_فواتير: record.طابعة_فواتير || ''
+      طابعة_فواتير: record.طابعة_فواتير || '',
+      اسم_الشارع: record.اسم_الشارع || '',
+      اسم_المدينة: record.اسم_المدينة || '',
+      الرقم_الضريبي: record.الرقم_الضريبي || '',
+      المنطقة: record.المنطقة || '',
+      serial_number: record.serial_number || 100000
     });
     setShowEditModal(true);
   };
@@ -111,7 +159,12 @@ export default function ServersTable() {
         حالة_اليوزر: editForm.حالة_اليوزر,
         تصنيف_الفرع: editForm.تصنيف_الفرع,
         طابعة_a4: editForm.طابعة_a4,
-        طابعة_فواتير: editForm.طابعة_فواتير
+        طابعة_فواتير: editForm.طابعة_فواتير,
+        اسم_الشارع: editForm.اسم_الشارع || null,
+        اسم_المدينة: editForm.اسم_المدينة || null,
+        الرقم_الضريبي: editForm.الرقم_الضريبي || null,
+        المنطقة: editForm.المنطقة || null,
+        serial_number: parseInt(String(editForm.serial_number)) || 100000
       };
 
       // إذا قام المستخدم بكتابة باسوورد جديد، نقوم بتشفيره
@@ -128,6 +181,7 @@ export default function ServersTable() {
 
       setShowEditModal(false);
       fetchData();
+      showToast('تم تحديث بيانات الفرع بنجاح');
     } catch (error: any) {
       alert('حدث خطأ أثناء التعديل: ' + error.message);
     }
@@ -137,6 +191,36 @@ export default function ServersTable() {
     setSelectedRecordId(id);
     setShowPasswordDialog(true);
     setDecryptionKey('');
+  };
+
+  const handleDeleteClick = (server: any) => {
+    setServerToDelete(server);
+    setShowDeleteDialog(true);
+    setDeleteKey('');
+    setDeleteError('');
+  };
+
+  const confirmDelete = async () => {
+    if (deleteKey !== 'sols') {
+      setDeleteError('كلمة المرور غير صحيحة');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('server_data')
+        .delete()
+        .eq('id', serverToDelete.id);
+
+      if (error) throw error;
+
+      setData(data.filter(s => s.id !== serverToDelete.id));
+      setShowDeleteDialog(false);
+      setServerToDelete(null);
+      showToast('تم حذف الفرع بنجاح');
+    } catch (err: any) {
+      setDeleteError(err.message);
+    }
   };
 
   const submitDecryption = () => {
@@ -153,16 +237,27 @@ export default function ServersTable() {
 
         if (!originalText) throw new Error('فشل فك التشفير');
 
-        setDecryptedPasswords(prev => ({
-          ...prev,
-          [selectedRecordId!]: originalText
-        }));
+        setDecryptedPasswords({ [selectedRecordId!]: originalText });
         setShowPasswordDialog(false);
 
-        // إخفاء تلقائي بعد 5 ثواني
-        setTimeout(() => {
-          setDecryptedPasswords({});
-        }, 5000);
+        // بدء العد التنازلي للإخفاء
+        setCountdown(5);
+        setIsExiting(false);
+        const timer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev !== null && prev <= 1) {
+              clearInterval(timer);
+              setDecryptedPasswords({});
+              setIsExiting(true);
+              setTimeout(() => {
+                setCountdown(null);
+                setIsExiting(false);
+              }, 1000); // إبطاء التلاشي لمدة ثانية
+              return 0;
+            }
+            return prev !== null ? prev - 1 : null;
+          });
+        }, 1000);
       } catch (e) {
         alert('حدث خطأ أثناء فك التشفير');
       }
@@ -186,6 +281,19 @@ export default function ServersTable() {
     link.click();
   };
 
+  const handlePrint = (record: any) => {
+    const supportedCategories = ['فرنشايز', 'فيلانتو', 'فلورينا', 'جملة', 'اسكتشر', 'موزع معتمد'];
+    if (supportedCategories.includes(record.تصنيف_الفرع)) {
+      setPrintingRecord(record);
+      setTimeout(() => {
+        window.print();
+        setPrintingRecord(null);
+      }, 500);
+    } else {
+      alert('سيتم تزويد بيانات الطباعة لهذا التصنيف لاحقاً');
+    }
+  };
+
   // حالات التقارير والفلترة بالتاريخ
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -201,7 +309,9 @@ export default function ServersTable() {
       String(r.رقم_الفرع || '').toLowerCase().includes(search.toLowerCase()) ||
       String(r.اسم_الفرع_ar || '').includes(search) ||
       String(r.اسم_الفرع_en || '').toLowerCase().includes(search.toLowerCase()) ||
-      String(r.تصنيف_الفرع || '').includes(search);
+      String(r.تصنيف_الفرع || '').includes(search) ||
+      String(r.المنطقة || '').includes(search) ||
+      String(r.اسم_المدينة || '').includes(search);
 
     if (!matchesSearch) return false;
 
@@ -344,11 +454,12 @@ export default function ServersTable() {
               <tr>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">رقم الفرع</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الاسم (AR)</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">التصنيف</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الاسم (EN)</th>
+                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">التصنيف والمنطقة</th>
+                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">العنوان والضريبة</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">اليوزر</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">اسم الطابعة</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الباسوورد</th>
+                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">التسلسل</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الحالة</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الخيارات</th>
               </tr>
@@ -382,9 +493,34 @@ export default function ServersTable() {
                 return (
                   <tr key={row.id} className={`border-b-2 ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/30 dark:hover:bg-slate-700/30 transition-colors ${rowBorderClass}`}>
                     <td className="p-4 font-medium text-gray-900 dark:text-slate-100">{row.رقم_الفرع}</td>
-                    <td className="p-4 text-gray-700 dark:text-slate-300">{row.اسم_الفرع_ar}</td>
-                    <td className="p-4 text-gray-700 dark:text-slate-300 font-medium">{row.تصنيف_الفرع || '—'}</td>
-                    <td className="p-4 text-gray-700 dark:text-slate-300">{row.اسم_الفرع_en}</td>
+                    <td className="p-4">
+                      <div className="flex flex-col">
+                        <span className="text-gray-900 dark:text-slate-100 font-medium">{row.اسم_الفرع_ar}</span>
+                        <span className="text-xs text-gray-500 dark:text-slate-400 uppercase">{row.اسم_الفرع_en}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col">
+                        <span className="text-gray-700 dark:text-slate-300 font-medium">{row.تصنيف_الفرع || '—'}</span>
+                        <span className="text-xs text-indigo-600 dark:text-indigo-400">{row.المنطقة || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="p-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="text-xs text-gray-600 dark:text-slate-400">
+                          {row.اسم_المدينة || row.اسم_الشارع ? (
+                            <>
+                              {row.اسم_المدينة} {row.اسم_الشارع && ` - ${row.اسم_الشارع}`}
+                            </>
+                          ) : '—'}
+                        </div>
+                        {row.الرقم_الضريبي && (
+                          <div className="text-[10px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded w-fit text-gray-500">
+                            ضريبي: {row.الرقم_الضريبي}
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td className="p-4 text-gray-700 dark:text-slate-300">{row.اسم_اليوزر}</td>
                     <td className="p-4 text-gray-700 dark:text-slate-300 text-xs">
                       <div className="flex flex-col gap-1">
@@ -424,6 +560,7 @@ export default function ServersTable() {
                         </div>
                       )}
                     </td>
+                    <td className="p-4 text-center text-gray-700 dark:text-slate-300">{row.serial_number || '—'}</td>
                     <td className="p-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${row.حالة_اليوزر === 'يعمل' ? 'bg-green-100 dark:bg-green-950/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-900/50' :
                           row.حالة_اليوزر === 'مغلق نهائياً' ? 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-900/50' :
@@ -443,13 +580,30 @@ export default function ServersTable() {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
+                      <button
+                        onClick={() => handlePrint(row)}
+                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/50 p-2 rounded-lg transition-colors"
+                        title="طباعة A4"
+                      >
+                        <Printer className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(row);
+                        }}
+                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 bg-red-50 dark:bg-red-950/50 p-2 rounded-lg transition-colors"
+                        title="حذف الفرع"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </td>
                   </tr>
                 );
               })}
               {filteredData.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-500 dark:text-slate-400">
+                  <td colSpan={10} className="p-8 text-center text-gray-500 dark:text-slate-400">
                     لا توجد بيانات مطابقة للبحث
                   </td>
                 </tr>
@@ -459,11 +613,61 @@ export default function ServersTable() {
         </div>
       </div>
 
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-gray-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-red-100 dark:border-red-900/30 animate-in zoom-in duration-300">
+            <div className="flex items-center gap-3 mb-4 text-red-600">
+              <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-full">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <h3 className="text-xl font-bold">تأكيد حذف الفرع</h3>
+            </div>
+            
+            <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">
+              أنت على وشك حذف الفرع <span className="font-bold text-gray-900 dark:text-white">({serverToDelete?.رقم_الفرع})</span>. لا يمكن التراجع عن هذا الإجراء.
+              <br /><br />
+              يرجى إدخال كلمة المرور للتأكيد:
+            </p>
+
+            {deleteError && (
+              <div className="mb-4 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100">
+                {deleteError}
+              </div>
+            )}
+
+            <input
+              type="password"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono mb-6"
+              value={deleteKey}
+              onChange={(e) => setDeleteKey(e.target.value)}
+              placeholder="••••"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && confirmDelete()}
+            />
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteDialog(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors"
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md shadow-red-200 dark:shadow-none"
+              >
+                حذف نهائي
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showPasswordDialog && (
         <div className="fixed inset-0 bg-gray-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
           <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100 dark:border-slate-700 transform transition-all scale-100">
             <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-slate-100">الصلاحية مطلوبة</h3>
-            <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">الرجاء إدخال كلمة المرور الآمنة (sols) لعرض بيانات الدخول:</p>
+            <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">إدخال كلمة المرور</p>
             <input
               type="password"
               className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-left font-mono tracking-widest mb-6"
@@ -538,6 +742,15 @@ export default function ServersTable() {
                   </select>
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">التسلسل</label>
+                  <input
+                    type="number"
+                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editForm.serial_number || ''}
+                    onChange={(e) => setEditForm({ ...editForm, serial_number: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">الاسم (AR)</label>
                   <input
                     type="text"
@@ -578,6 +791,79 @@ export default function ServersTable() {
                   />
                 </div>
                 <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">المنطقة</label>
+                  <select
+                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editForm.المنطقة || ''}
+                    onChange={(e) => setEditForm({ ...editForm, المنطقة: e.target.value })}
+                  >
+                    <option value="">-- اختر المنطقة --</option>
+                    <option value="1-المدينة المنورة">1 - المدينة المنورة</option>
+                    <option value="1-المنطقة الوسطى">1 - المنطقة الوسطى</option>
+                    <option value="2-الرياض">2 - الرياض</option>
+                    <option value="2-الدمام">2 - الدمام</option>
+                    <option value="3-الجنوبية - أبها">3 - الجنوبية - أبها</option>
+                    <option value="4-جدة">4 - جدة</option>
+                    <option value="4-الغربية - مكة">4 - الغربية - مكة</option>
+                    <option value="5-الشمالية تبوك">5 - الشمالية تبوك</option>
+                    <option value="5-الطائف">5 - الطائف</option>
+                  </select>
+                </div>
+                <div className="col-span-2 border-t border-gray-100 dark:border-slate-700 pt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-gray-500">البيانات الإضافية</span>
+                    {editForm.تصنيف_الفرع === 'فرنشايز' || editForm.تصنيف_الفرع === 'فيلانتو' ? (
+                      <span className="text-[10px] bg-amber-100 text-amber-600 px-2 py-0.5 rounded-full">مطلوب: الشارع + المدينة + الضريبة</span>
+                    ) : editForm.تصنيف_الفرع === 'فلورينا' || editForm.تصنيف_الفرع === 'جملة' ? (
+                      <span className="text-[10px] bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">مطلوب: المدينة فقط</span>
+                    ) : (
+                      <span className="text-[10px] bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">غير مطلوبة لهذا التصنيف</span>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">
+                    اسم الشارع {getRequiredFields(editForm.تصنيف_الفرع).street && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                    value={editForm.اسم_الشارع}
+                    onChange={(e) => setEditForm({ ...editForm, اسم_الشارع: e.target.value })}
+                    required={getRequiredFields(editForm.تصنيف_الفرع).street}
+                    disabled={!getRequiredFields(editForm.تصنيف_الفرع).street && !getRequiredFields(editForm.تصنيف_الفرع).city}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">
+                    اسم المدينة {getRequiredFields(editForm.تصنيف_الفرع).city && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                    value={editForm.اسم_المدينة}
+                    onChange={(e) => setEditForm({ ...editForm, اسم_المدينة: e.target.value })}
+                    required={getRequiredFields(editForm.تصنيف_الفرع).city}
+                    disabled={!getRequiredFields(editForm.تصنيف_الفرع).street && !getRequiredFields(editForm.تصنيف_الفرع).city}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">
+                    الرقم الضريبي {getRequiredFields(editForm.تصنيف_الفرع).taxNo && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+                    value={editForm.الرقم_الضريبي}
+                    onChange={(e) => setEditForm({ ...editForm, الرقم_الضريبي: e.target.value })}
+                    required={getRequiredFields(editForm.تصنيف_الفرع).taxNo}
+                    disabled={!getRequiredFields(editForm.تصنيف_الفرع).taxNo}
+                  />
+                </div>
+                <div className="col-span-2 border-t border-gray-100 dark:border-slate-700 pt-4">
+                  <span className="text-xs font-bold text-gray-500">بيانات الطابعات</span>
+                </div>
+                <div>
                   <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">طابعة A4</label>
                   <input
                     type="text"
@@ -613,6 +899,94 @@ export default function ServersTable() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {printingRecord && <PrintableBranchFoundation server={printingRecord} />}
+
+      {showPasswordDialog && (
+        <div className="fixed inset-0 bg-gray-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
+          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100 dark:border-slate-700 transform transition-all scale-100">
+            <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-slate-100">الصلاحية مطلوبة</h3>
+            <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">إدخال كلمة المرور</p>
+            <input
+              type="password"
+              className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-left font-mono tracking-widest mb-6"
+              value={decryptionKey}
+              onChange={(e) => setDecryptionKey(e.target.value)}
+              placeholder="••••"
+              autoFocus
+              onKeyDown={(e) => e.key === 'Enter' && submitDecryption()}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={submitDecryption}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors"
+              >
+                تأكيد
+              </button>
+              <button
+                onClick={() => setShowPasswordDialog(false)}
+                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors"
+              >
+                إلغاء
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast Notification */}
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border ${
+            toast.type === 'success' 
+              ? 'bg-white dark:bg-slate-800 border-green-100 dark:border-green-900/30 text-green-600 dark:text-green-400' 
+              : 'bg-white dark:bg-slate-800 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400'
+          }`}>
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              toast.type === 'success' ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'
+            }`}>
+              {toast.type === 'success' ? (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              )}
+            </div>
+            <span className="font-bold text-sm">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Countdown Toast for Password */}
+      {(countdown !== null || isExiting) && (
+        <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-1000 ease-in-out ${
+          isExiting ? 'opacity-0 -translate-y-8 pointer-events-none' : 'opacity-100 translate-y-0 animate-in slide-in-from-top-4 fade-in'
+        }`}>
+          <div className="px-6 py-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-indigo-100 dark:border-indigo-900/30 rounded-3xl shadow-2xl flex flex-col items-center gap-2 min-w-[200px]">
+            <div className="relative w-12 h-12 flex items-center justify-center">
+              <svg className="w-full h-full -rotate-90">
+                <circle
+                  cx="24" cy="24" r="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-indigo-100 dark:text-indigo-900/30"
+                />
+                <circle
+                  cx="24" cy="24" r="20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeDasharray="126"
+                  strokeDashoffset={countdown !== null ? 126 - (126 * countdown) / 5 : 126}
+                  className="text-indigo-600 dark:text-indigo-400 transition-all duration-1000 ease-linear"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="absolute text-xl font-black text-indigo-600 dark:text-indigo-400">{countdown ?? 0}</span>
+            </div>
+            <span className="text-xs font-bold text-gray-500 dark:text-slate-400">سيختفي الباسوورد خلال {countdown ?? 0} ثواني</span>
           </div>
         </div>
       )}

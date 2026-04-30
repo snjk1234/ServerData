@@ -52,6 +52,8 @@ dependencies:
     sdk: flutter
   aescryptojs: ^1.0.0
   share_plus: ^13.1.0
+  pdf: ^3.10.7
+  printing: ^5.11.0
 
 dev_dependencies:
   flutter_test:
