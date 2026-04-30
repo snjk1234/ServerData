@@ -87,6 +87,8 @@ export default function AddServerPage() {
             اسم_اليوزر: username,
             باسوورد: encryptedPassword,
             حالة_اليوزر: status,
+            طابعة_a4: `${branchNameEn.slice(0, 4)}BIGPRIN1`,
+            طابعة_فواتير: `${branchNameEn.slice(0, 4)}SPRI`,
           }
         ]);
 
@@ -207,6 +209,11 @@ export default function AddServerPage() {
                   onChange={(e) => setBranchNameEn(e.target.value.toUpperCase())}
                   dir="ltr"
                 />
+                {branchNameEn && (
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 mt-2 font-medium">
+                    * اسم الطابعه A4 هو {branchNameEn.slice(0, 4)}BIGPRIN1 والفواتير {branchNameEn.slice(0, 4)}SPRI
+                  </p>
+                )}
               </div>
 
               {/* الحالة */}

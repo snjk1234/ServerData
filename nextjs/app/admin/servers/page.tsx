@@ -28,7 +28,9 @@ export default function ServersTable() {
     اسم_اليوزر: '',
     باسوورد: '',
     حالة_اليوزر: '',
-    تصنيف_الفرع: ''
+    تصنيف_الفرع: '',
+    طابعة_a4: '',
+    طابعة_فواتير: ''
   });
 
   useEffect(() => {
@@ -91,7 +93,9 @@ export default function ServersTable() {
       اسم_اليوزر: record.اسم_اليوزر,
       باسوورد: '', // نترك الباسوورد فارغاً إلا إذا أراد المستخدم تحديثه
       حالة_اليوزر: record.حالة_اليوزر,
-      تصنيف_الفرع: record.تصنيف_الفرع || 'فلورينا'
+      تصنيف_الفرع: record.تصنيف_الفرع || 'فلورينا',
+      طابعة_a4: record.طابعة_a4 || '',
+      طابعة_فواتير: record.طابعة_فواتير || ''
     });
     setShowEditModal(true);
   };
@@ -105,7 +109,9 @@ export default function ServersTable() {
         اسم_الفرع_en: editForm.اسم_الفرع_en.toUpperCase(),
         اسم_اليوزر: editForm.اسم_اليوزر,
         حالة_اليوزر: editForm.حالة_اليوزر,
-        تصنيف_الفرع: editForm.تصنيف_الفرع
+        تصنيف_الفرع: editForm.تصنيف_الفرع,
+        طابعة_a4: editForm.طابعة_a4,
+        طابعة_فواتير: editForm.طابعة_فواتير
       };
 
       // إذا قام المستخدم بكتابة باسوورد جديد، نقوم بتشفيره
@@ -195,7 +201,7 @@ export default function ServersTable() {
       String(r.رقم_الفرع || '').toLowerCase().includes(search.toLowerCase()) ||
       String(r.اسم_الفرع_ar || '').includes(search) ||
       String(r.اسم_الفرع_en || '').toLowerCase().includes(search.toLowerCase()) ||
-      String(r.حالة_اليوزر || '').includes(search);
+      String(r.تصنيف_الفرع || '').includes(search);
 
     if (!matchesSearch) return false;
 
@@ -306,7 +312,7 @@ export default function ServersTable() {
               autoComplete="off"
               data-lpignore="true"
               data-form-type="other"
-              placeholder="ابحث برقم الفرع، الاسم، أو الحالة..."
+              placeholder="ابحث برقم الفرع، الاسم، أو التصنيف..."
               className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -341,6 +347,7 @@ export default function ServersTable() {
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">التصنيف</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الاسم (EN)</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">اليوزر</th>
+                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">اسم الطابعة</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الباسوورد</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الحالة</th>
                 <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الخيارات</th>
@@ -379,6 +386,12 @@ export default function ServersTable() {
                     <td className="p-4 text-gray-700 dark:text-slate-300 font-medium">{row.تصنيف_الفرع || '—'}</td>
                     <td className="p-4 text-gray-700 dark:text-slate-300">{row.اسم_الفرع_en}</td>
                     <td className="p-4 text-gray-700 dark:text-slate-300">{row.اسم_اليوزر}</td>
+                    <td className="p-4 text-gray-700 dark:text-slate-300 text-xs">
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">A4: {row.طابعة_a4 || '—'}</span>
+                        <span className="text-gray-500 dark:text-slate-400">فاتورة: {row.طابعة_فواتير || '—'}</span>
+                      </div>
+                    </td>
                     <td className="p-4">
                       {decryptedPasswords[row.id] ? (
                         <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
@@ -562,6 +575,24 @@ export default function ServersTable() {
                     value={editForm.باسوورد}
                     onChange={(e) => setEditForm({ ...editForm, باسوورد: e.target.value })}
                     placeholder="اتركه فارغاً للاحتفاظ بالقديم"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">طابعة A4</label>
+                  <input
+                    type="text"
+                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editForm.طابعة_a4}
+                    onChange={(e) => setEditForm({ ...editForm, طابعة_a4: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">طابعة الفواتير</label>
+                  <input
+                    type="text"
+                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    value={editForm.طابعة_فواتير}
+                    onChange={(e) => setEditForm({ ...editForm, طابعة_فواتير: e.target.value })}
                   />
                 </div>
               </div>
