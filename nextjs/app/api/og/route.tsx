@@ -2,7 +2,7 @@ import { ImageResponse } from '@vercel/og';
 
 export const runtime = 'edge';
 
-// DevToDollars theme colors
+// ServerData theme colors
 const colors = {
   primary: '#ffca28',
   surface2: '#1b1b1d',
@@ -243,7 +243,7 @@ export async function GET() {
           </p>
         </div>
 
-        {/* DevToDollars branding at bottom */}
+        {/* ServerData branding at bottom */}
         <div
           style={{
             position: 'absolute',
@@ -269,7 +269,7 @@ export async function GET() {
               letterSpacing: '-0.01em',
             }}
           >
-            DevToDollars
+            ServerData
           </span>
         </div>
       </div>

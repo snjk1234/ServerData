@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:devtodollars/components/email_form.dart';
+import 'package:serverdata/components/email_form.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});

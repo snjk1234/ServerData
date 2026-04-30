@@ -19,5 +19,5 @@ Do NOT put sensitive keys into `env.json` or `env.local.json`
 
 ## Helpful Links
 * [https://docs.flutter.dev/get-started/install](https://docs.flutter.dev/get-started/install)
-* https://devtodollars.com/blog/flutter-riverpod-is-not-complicated
+* https://ServerData.com/blog/flutter-riverpod-is-not-complicated
 * https://codewithandrea.com/articles/flutter-project-structure/

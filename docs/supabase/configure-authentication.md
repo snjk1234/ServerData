@@ -7,7 +7,7 @@ Below are quick guides for configuring authentication with the boilerplate. Most
 ## Setup Email
 
 1. Go to Supabase dashboard >  Authentication > Providers, and enable email authentication
-2. Enable email verification. If disabled make sure to remove [email verification dialog](https://github.com/devtodollars/flutter-supabase-production-template/blob/main/flutter/lib/components/email\_form.dart#L69) in the code.
+2. Enable email verification. If disabled make sure to remove [email verification dialog](https://github.com/ServerData/flutter-supabase-production-template/blob/main/flutter/lib/components/email\_form.dart#L69) in the code.
 3. Under Authentication > URL Configuration, adjust the site URL to your app url.
 
 ## Setup Social Sign Ins
@@ -21,8 +21,8 @@ Below are quick guides for configuring authentication with the boilerplate. Most
 Make sure to update redirect URLs under Authentication > URL Configuration for all URLs. For example, that would look like:
 
 * `http://localhost:*`
-* `https://app.devtodollars.com`
-* `https://**--devtodollars.netlify.app`
+* `https://app.ServerData.com`
+* `https://**--ServerData.netlify.app`
 :::
 
 ### Configure for local development

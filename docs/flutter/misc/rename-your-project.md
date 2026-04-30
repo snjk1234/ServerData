@@ -3,7 +3,7 @@ sidebar_position: 1
 ---
 # Rename your Project
 
-By default the project is named `DevToDollars`. There are a lot of things to rename (iOS, Android, Web, MacOS, Linux,  Windows) and it's tedious / error prone to rename everything manually. Here are the steps to do so:
+By default the project is named `ServerData`. There are a lot of things to rename (iOS, Android, Web, MacOS, Linux,  Windows) and it's tedious / error prone to rename everything manually. Here are the steps to do so:
 
 1. Install the [rename package](https://pub.dev/packages/rename)
 

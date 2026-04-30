@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:devtodollars/services/router_notifier.dart';
+import 'package:serverdata/services/router_notifier.dart';
 
 void main() async {
   usePathUrlStrategy();
@@ -22,7 +22,7 @@ class MyApp extends ConsumerWidget {
   Widget build(context, ref) {
     final goRouter = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'DevToDollars',
+      title: 'ServerData',
       debugShowCheckedModeBanner: false,
       routerConfig: goRouter,
       locale: const Locale('ar'), // لغة عربية

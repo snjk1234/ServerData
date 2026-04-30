@@ -1,4 +1,4 @@
-import 'package:devtodollars/models/stripe.dart';
+import 'package:serverdata/models/stripe.dart';
 
 class UserMetadata {
   final String? avatarUrl;

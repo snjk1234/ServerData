@@ -55,7 +55,7 @@ export const Footer = () => {
               className="flex items-center gap-2"
             >
               <LogoIcon />
-              <h3 className="text-xl font-bold">DevToDollars</h3>
+              <h3 className="text-xl font-bold">ServerData</h3>
             </a>
           </div>
           {columns.map((column, index) => (
@@ -75,7 +75,7 @@ export const Footer = () => {
         </div>
         <div className="flex flex-col items-center justify-between gap-4 border-t py-8 sm:flex-row">
           <div className="text-muted-foreground text-sm">
-            &copy; {new Date().getFullYear()} DevToDollars. All rights reserved.
+            &copy; {new Date().getFullYear()} ServerData. All rights reserved.
           </div>
           <div className="flex items-center gap-4 text-sm">
             {policies.map((policy, index) => (

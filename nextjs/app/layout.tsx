@@ -9,7 +9,7 @@ import PostHogPageViewWrapper from '@/components/misc/PostHogPageViewWrapper';
 import { ShareButton } from '@/components/ui/ShareButton';
 
 const meta = {
-  title: 'DevToDollars',
+  title: 'ServerData',
   description:
     'Tech Co-founder as a Service. Helping Developers Become Founders.',
   cardImage: getURL('/api/og'),

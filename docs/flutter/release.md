@@ -5,7 +5,7 @@ sidebar_position: 3
 
 ## Setup
 
-Below are the steps to configure the [pipelines](https://github.com/devtodollars/flutter-supabase-production-template/tree/main/.github/workflows) to create a deployment preview, deploy Supabase edge functions, and create / publish releases.
+Below are the steps to configure the [pipelines](https://github.com/ServerData/flutter-supabase-production-template/tree/main/.github/workflows) to create a deployment preview, deploy Supabase edge functions, and create / publish releases.
 
 1. Create a Netlify site: Add New Site > Manual Deploy
 2. Upload below .zip file to create the website
@@ -15,7 +15,7 @@ Below are the steps to configure the [pipelines](https://github.com/devtodollars
 3. (OPTIONAL) [Configure a custom domain](https://docs.netlify.com/domains-https/custom-domains/configure-external-dns/#configure-a-subdomain) in Netlify
 
 :::info
-You'd preferably configure a subdomain (e.g. `app.devtodollars.com`)
+You'd preferably configure a subdomain (e.g. `app.ServerData.com`)
 :::
 
 4. Go to page to set [Github Action secrets](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-a-repository)
@@ -37,7 +37,7 @@ For the release process we use [semantic versioning](https://semver.org/) and ta
 git checkout -b version-1.2.3
 ```
 
-2. Run the [bumpversion.sh](https://github.com/devtodollars/flutter-supabase-production-template/blob/main/flutter/bumpversion.sh) script and specify the version number
+2. Run the [bumpversion.sh](https://github.com/ServerData/flutter-supabase-production-template/blob/main/flutter/bumpversion.sh) script and specify the version number
 
 ```bash
 ./bumpversion.sh 1.2.3

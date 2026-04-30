@@ -1,8 +1,8 @@
 # Production MVP Boilerplate
 
-## 👉 [See documentation to get started](https://resources.devtodollars.com/docs) 👈
-- [Flutter Demo](https://flutter.devtodollars.com)
-- [NextJS Demo](https://nextjs.devtodollars.com)
+## 👉 [See documentation to get started](https://resources.ServerData.com/docs) 👈
+- [Flutter Demo](https://flutter.ServerData.com)
+- [NextJS Demo](https://nextjs.ServerData.com)
 - Building a startup? [Join the tech founder community](https://discord.gg/6q63Xa6SEB)
 
 ## What's Included:
@@ -13,8 +13,8 @@
 - Routing ([go_router](https://pub.dev/packages/go_router))
 - Payments with Stripe
 - Authentication with Supabase
-- 🚧 [Frontend Tests](https://github.com/devtodollars/flutter-supabase-production-template/issues/4) 🚧
-- 🚧 [Adjustable Theme](https://github.com/devtodollars/startup-boilerplate/issues/40) 🚧
+- 🚧 [Frontend Tests](https://github.com/ServerData/flutter-supabase-production-template/issues/4) 🚧
+- 🚧 [Adjustable Theme](https://github.com/ServerData/startup-boilerplate/issues/40) 🚧
 
 ### Landing Page / Web App ([NextJS](./nextjs/README.md))
 
@@ -22,7 +22,7 @@
 - Typescript
 - Payments with Stripe
 - Authentication with Supabase
-- 🚧 [Landing Page Template](https://github.com/devtodollars/startup-boilerplate/issues/54) 🚧
+- 🚧 [Landing Page Template](https://github.com/ServerData/startup-boilerplate/issues/54) 🚧
 
 ### Backend ([Supabase](./supabase/README.md))
 
@@ -30,7 +30,7 @@
   - Email + PW
   - SSO (Google, Github, etc.)
 - Fully configured for local development from day one
-- 🚧 [backend tests](https://github.com/devtodollars/flutter-supabase-production-template/issues/16) 🚧
+- 🚧 [backend tests](https://github.com/ServerData/flutter-supabase-production-template/issues/16) 🚧
 - Test
 ### Analytics ([Posthog](https://posthog.com/))
 
@@ -57,7 +57,7 @@
 - Script to `bumpversion.sh` following semantic versioning
 - Deploys a web preview on Netlify for every PR
 - Publishing pipeline to publish to Netlify and to publish supabase functions
-- 🚧 [Automated Mobile Publishing](https://github.com/devtodollars/flutter-supabase-production-template/issues/22) 🚧
+- 🚧 [Automated Mobile Publishing](https://github.com/ServerData/flutter-supabase-production-template/issues/22) 🚧
 
 ### Emails ([Loops.so](https://loops.so))
 
@@ -66,5 +66,5 @@
 - Contact management and event-triggered campaigns
 - Built-in analytics and deliverability tracking
 
-### 🚧 [Error Monitoring](https://github.com/devtodollars/flutter-supabase-production-template/issues/18) ([Sentry](https://sentry.io/welcome/)) 🚧
+### 🚧 [Error Monitoring](https://github.com/ServerData/flutter-supabase-production-template/issues/18) ([Sentry](https://sentry.io/welcome/)) 🚧
 

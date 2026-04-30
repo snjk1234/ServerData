@@ -66,7 +66,7 @@ export const Navbar = ({ user }: { user: User | null }) => {
               className="ml-2 font-bold text-xl flex items-center gap-2"
             >
               <LogoIcon />
-              DevToDollars
+              ServerData
             </a>
           </NavigationMenuItem>
 
@@ -84,7 +84,7 @@ export const Navbar = ({ user }: { user: User | null }) => {
               <SheetContent side={'left'}>
                 <SheetHeader>
                   <SheetTitle className="font-bold text-xl">
-                    DevToDollars
+                    ServerData
                   </SheetTitle>
                 </SheetHeader>
                 <nav className="flex flex-col justify-center items-center gap-2 mt-4">

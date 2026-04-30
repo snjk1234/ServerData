@@ -8,11 +8,11 @@ sidebar_position: 1
 2. In your terminal, run the following commands:
 
 ```bash
-git clone https://github.com/devtodollars/startup-boilerplate.git YOUR_APP_NAME
+git clone https://github.com/ServerData/startup-boilerplate.git YOUR_APP_NAME
 cd YOUR_APP_NAME
 ```
 
-3. Use `.env` file from DevToDollars
+3. Use `.env` file from ServerData
 
 ```
 cd nextjs

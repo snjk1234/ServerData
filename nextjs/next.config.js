@@ -6,5 +6,15 @@ module.exports = {
         destination: '/auth/signin'
       }
     ];
+  },
+  redirects: async () => {
+    return [
+      {
+        source: '/',
+        destination: '/login',
+        permanent: false
+      }
+    ];
   }
 };
+
