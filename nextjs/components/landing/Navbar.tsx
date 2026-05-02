@@ -53,7 +53,7 @@ export const Navbar = ({ user }: { user: User | null }) => {
     if (user) {
       return router.push('/account');
     }
-    return router.push('/auth');
+    return router.push('/login');
   };
   return (
     <header className="sticky top-0 z-40 w-full glass-2 backdrop-blur-md">

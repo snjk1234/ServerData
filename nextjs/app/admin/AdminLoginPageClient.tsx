@@ -5,7 +5,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { ShareButton } from '@/components/ui/ShareButton';
 
-export default function LoginPage() {
+export default function AdminLoginPageClient() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +14,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  // Create a supabase client for the browser
   const supabase = createClient();
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -4,6 +4,10 @@ module.exports = {
       {
         source: '/auth',
         destination: '/auth/signin'
+      },
+      {
+        source: '/login',
+        destination: '/auth/signin'
       }
     ];
   },
@@ -11,4 +15,3 @@ module.exports = {
     return [];
   }
 };
-
