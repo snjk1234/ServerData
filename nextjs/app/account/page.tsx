@@ -4,14 +4,118 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
-import { Eye, Copy, Printer, Trash2 } from 'lucide-react';
+import { Eye, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints } from 'lucide-react';
 import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
+
+const categories = [
+  { id: 'all', name: 'الكل' },
+  { id: 'فلورينا', name: 'فلورينا' },
+  { id: 'فرنشايز', name: 'فرنشايز' },
+  { id: 'جملة', name: 'جملة' },
+  { id: 'موزع معتمد', name: 'موزع معتمد' },
+  { id: 'اسكتشر', name: 'اسكتشر' },
+  { id: 'فيلانتو', name: 'فيلانتو' }
+];
+
+const categoryThemes: Record<string, {
+  activeBg: string;
+  badgeActive: string;
+  badgeInactive: string;
+  borderHover: string;
+  textActive: string;
+  iconBg: string;
+  iconColor: string;
+}> = {
+  all: {
+    activeBg: 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 dark:shadow-none',
+    badgeActive: 'bg-indigo-700/50 text-indigo-100',
+    badgeInactive: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400',
+    borderHover: 'hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-indigo-600 dark:text-indigo-400',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-950/50',
+    iconColor: 'text-indigo-600 dark:text-indigo-400'
+  },
+  'فلورينا': {
+    activeBg: 'bg-sky-600 dark:bg-sky-500 text-white shadow-lg shadow-sky-500/20 dark:shadow-none',
+    badgeActive: 'bg-sky-700/50 text-sky-100',
+    badgeInactive: 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400',
+    borderHover: 'hover:border-sky-500 hover:bg-sky-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-sky-600 dark:text-sky-400',
+    iconBg: 'bg-sky-100 dark:bg-sky-950/50',
+    iconColor: 'text-sky-600 dark:text-sky-400'
+  },
+  'فرنشايز': {
+    activeBg: 'bg-purple-600 dark:bg-purple-500 text-white shadow-lg shadow-purple-500/20 dark:shadow-none',
+    badgeActive: 'bg-purple-700/50 text-purple-100',
+    badgeInactive: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400',
+    borderHover: 'hover:border-purple-500 hover:bg-purple-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-purple-600 dark:text-purple-400',
+    iconBg: 'bg-purple-100 dark:bg-purple-950/50',
+    iconColor: 'text-purple-600 dark:text-purple-400'
+  },
+  'جملة': {
+    activeBg: 'bg-amber-500 dark:bg-amber-500 text-white shadow-lg shadow-amber-500/20 dark:shadow-none',
+    badgeActive: 'bg-amber-600/50 text-amber-100',
+    badgeInactive: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400',
+    borderHover: 'hover:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-amber-600 dark:text-amber-400',
+    iconBg: 'bg-amber-100 dark:bg-amber-950/50',
+    iconColor: 'text-amber-600 dark:text-amber-400'
+  },
+  'موزع معتمد': {
+    activeBg: 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 dark:shadow-none',
+    badgeActive: 'bg-emerald-700/50 text-emerald-100',
+    badgeInactive: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400',
+    borderHover: 'hover:border-emerald-500 hover:bg-emerald-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-emerald-600 dark:text-emerald-400',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-950/50',
+    iconColor: 'text-emerald-600 dark:text-emerald-400'
+  },
+  'اسكتشر': {
+    activeBg: 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 dark:shadow-none',
+    badgeActive: 'bg-indigo-700/50 text-indigo-100',
+    badgeInactive: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400',
+    borderHover: 'hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-indigo-600 dark:text-indigo-400',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-950/50',
+    iconColor: 'text-indigo-600 dark:text-indigo-400'
+  },
+  'فيلانتو': {
+    activeBg: 'bg-rose-600 dark:bg-rose-500 text-white shadow-lg shadow-rose-500/20 dark:shadow-none',
+    badgeActive: 'bg-rose-700/50 text-rose-100',
+    badgeInactive: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400',
+    borderHover: 'hover:border-rose-500 hover:bg-rose-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-rose-600 dark:text-rose-400',
+    iconBg: 'bg-rose-100 dark:bg-rose-950/50',
+    iconColor: 'text-rose-600 dark:text-rose-400'
+  }
+};
+
+const renderCategoryIcon = (id: string, className = "w-5 h-5") => {
+  switch (id) {
+    case 'all': return <LayoutGrid className={className} />;
+    case 'فلورينا': return <ShoppingBag className={className} />;
+    case 'فرنشايز': return <Store className={className} />;
+    case 'جملة': return <Layers className={className} />;
+    case 'موزع معتمد': return <ShieldCheck className={className} />;
+    case 'اسكتشر': return <Footprints className={className} />;
+    case 'فيلانتو': return <Sparkles className={className} />;
+    default: return <Store className={className} />;
+  }
+};
 
 export default function AccountServersTable() {
   const supabase = createClient();
   const [data, setData] = useState<any[]>([]);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
 
   // حالات فك التشفير
   const [showPasswordDialog, setShowPasswordDialog] = useState(false);
@@ -69,6 +173,11 @@ export default function AccountServersTable() {
 
   useEffect(() => {
     fetchData();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) {
+        setUserEmail(user.email);
+      }
+    });
   }, []);
 
   useEffect(() => {
@@ -108,7 +217,7 @@ export default function AccountServersTable() {
   };
 
   const fetchData = async () => {
-    const { data: records, error } = await supabase
+    const { data: records, error } = await (supabase as any)
       .from('server_data')
       .select('*')
       .order('id', { ascending: false });
@@ -162,7 +271,7 @@ export default function AccountServersTable() {
         updatedData.باسوورد = CryptoJS.AES.encrypt(editForm.باسوورد, 'sols').toString();
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('server_data')
         .update(updatedData)
         .eq('id', editingRecord.id);
@@ -197,7 +306,7 @@ export default function AccountServersTable() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('server_data')
         .delete()
         .eq('id', serverToDelete.id);
@@ -294,7 +403,51 @@ export default function AccountServersTable() {
     return acc;
   }, {});
 
+  // حساب عدد العناصر المطابقة للبحث والفلترة في كل تصنيف لتحديث شارات الـ Sidebar تلقائياً
+  const categoryCounts = (() => {
+    const counts: Record<string, number> = { all: 0 };
+    categories.forEach(cat => {
+      if (cat.id !== 'all') counts[cat.id] = 0;
+    });
+
+    data.forEach(r => {
+      const matchesSearch =
+        String(r.رقم_الفرع || '').toLowerCase().includes(search.toLowerCase()) ||
+        String(r.اسم_الفرع_ar || '').includes(search) ||
+        String(r.اسم_الفرع_en || '').toLowerCase().includes(search.toLowerCase()) ||
+        String(r.تصنيف_الفرع || '').includes(search) ||
+        String(r.المنطقة || '').includes(search) ||
+        String(r.اسم_المدينة || '').includes(search);
+
+      const matchesStatus = !statusFilter || r.حالة_اليوزر === statusFilter;
+
+      let matchesDate = true;
+      if (startDate || endDate) {
+        const createdDate = new Date(r.تاريخ_الانشاء);
+        if (startDate && createdDate < new Date(startDate)) matchesDate = false;
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setDate(end.getDate() + 1);
+          if (createdDate > end) matchesDate = false;
+        }
+      }
+
+      if (matchesSearch && matchesStatus && matchesDate) {
+        counts.all++;
+        const cat = r.تصنيف_الفرع;
+        if (cat && cat in counts) {
+          counts[cat]++;
+        }
+      }
+    });
+
+    return counts;
+  })();
+
   const filteredData = data.filter(r => {
+    // فلترة التبويب النشط (القائمة الجانبية)
+    if (activeCategory && r.تصنيف_الفرع !== activeCategory) return false;
+
     const matchesSearch =
       String(r.رقم_الفرع || '').toLowerCase().includes(search.toLowerCase()) ||
       String(r.اسم_الفرع_ar || '').includes(search) ||
@@ -321,285 +474,386 @@ export default function AccountServersTable() {
   });
 
   return (
-    <div className="p-8 font-sans bg-gray-50 dark:bg-slate-900 min-h-screen text-gray-900 dark:text-slate-100 transition-colors duration-300" dir="rtl">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8 bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50">
-          <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+    <div className="p-3 font-sans bg-gray-100 dark:bg-slate-900 min-h-screen text-gray-900 dark:text-slate-100 transition-colors duration-300" dir="rtl">
+      <div className="w-full mx-auto">
+        <div className="w-full md:max-w-[996px] bg-white dark:bg-slate-800 px-4 py-2.5 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-2 flex items-center justify-start">
+          <h1 className="text-2xl font-extrabold font-sans text-indigo-800 dark:text-amber-300">
             بيانات السيرفر
           </h1>
-          <div className="flex gap-3">
-            <Link
-              href="/account/add"
-              className="bg-green-600 hover:bg-green-700 transition-colors text-white px-6 py-2.5 rounded-lg shadow-md font-medium flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-              </svg>
-              إضافة سيرفر جديد
-            </Link>
-            <button
-              onClick={exportToCSV}
-              className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-6 py-2.5 rounded-lg shadow-md font-medium flex items-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-              تصدير إلى Excel
-            </button>
-          </div>
         </div>
 
-        {/* قسم الإحصائيات (التقارير) */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <button
-            onClick={() => setStatusFilter(statusFilter === 'يعمل' ? null : 'يعمل')}
-            className={`p-4 rounded-xl shadow-sm border flex flex-col items-center transition-all cursor-pointer ${statusFilter === 'يعمل'
-              ? 'bg-green-50 dark:bg-green-950/20 border-green-500 dark:border-green-500 ring-2 ring-green-500/20'
-              : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700/50 hover:border-green-500 dark:hover:border-green-500 hover:shadow-md'
-              }`}
-          >
-            <span className="text-sm font-medium text-gray-500 dark:text-slate-400">يعمل</span>
-            <span className="text-2xl font-bold text-green-600 dark:text-green-400">{stats['يعمل'] || 0}</span>
-          </button>
+        <div className="flex flex-col lg:flex-row gap-3 items-start">
 
-          <button
-            onClick={() => setStatusFilter(statusFilter === 'الافتتاح قريبا' ? null : 'الافتتاح قريبا')}
-            className={`p-4 rounded-xl shadow-sm border flex flex-col items-center transition-all cursor-pointer ${statusFilter === 'الافتتاح قريبا'
-              ? 'bg-blue-50 dark:bg-blue-950/20 border-blue-500 dark:border-blue-500 ring-2 ring-blue-500/20'
-              : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700/50 hover:border-blue-500 dark:hover:border-blue-500 hover:shadow-md'
-              }`}
-          >
-            <span className="text-sm font-medium text-gray-500 dark:text-slate-400">الافتتاح قريبا</span>
-            <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats['الافتتاح قريبا'] || 0}</span>
-          </button>
+          {/* الـ Sidebar الأيمن - أقسام التصنيفات */}
+          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-1.5 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-190px)] flex flex-col justify-between shadow-sm">
+            <div>
+              <h2 className="hidden lg:flex text-sm font-bold text-gray-800 dark:text-slate-200 mb-2.5 pb-1.5 border-b border-gray-200 dark:border-slate-700 items-center gap-1.5 px-2.5">
+                <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                أقسام الفروع
+              </h2>
 
-          <button
-            onClick={() => setStatusFilter(statusFilter === 'مغلق مؤقتا' ? null : 'مغلق مؤقتا')}
-            className={`p-4 rounded-xl shadow-sm border flex flex-col items-center transition-all cursor-pointer ${statusFilter === 'مغلق مؤقتا'
-              ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-500 dark:border-yellow-500 ring-2 ring-yellow-500/20'
-              : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700/50 hover:border-yellow-500 dark:hover:border-yellow-500 hover:shadow-md'
-              }`}
-          >
-            <span className="text-sm font-medium text-gray-500 dark:text-slate-400">مغلق مؤقتا</span>
-            <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{stats['مغلق مؤقتا'] || 0}</span>
-          </button>
+              <div className="flex flex-row overflow-x-auto lg:flex-col gap-1 pb-1 lg:pb-0 scrollbar-none no-scrollbar -mx-1 px-1 lg:mx-0 lg:px-0">
+                {categories.map((cat) => {
+                  const isActive = activeCategory === (cat.id === 'all' ? null : cat.id);
+                  const theme = categoryThemes[cat.id] || categoryThemes.all;
+                  const count = categoryCounts[cat.id];
 
-          <button
-            onClick={() => setStatusFilter(statusFilter === 'مغلق نهائياً' ? null : 'مغلق نهائياً')}
-            className={`p-4 rounded-xl shadow-sm border flex flex-col items-center transition-all cursor-pointer ${statusFilter === 'مغلق نهائياً'
-              ? 'bg-red-50 dark:bg-red-950/20 border-red-500 dark:border-red-500 ring-2 ring-red-500/20'
-              : 'bg-white dark:bg-slate-800 border-gray-100 dark:border-slate-700/50 hover:border-red-500 dark:hover:border-red-500 hover:shadow-md'
-              }`}
-          >
-            <span className="text-sm font-medium text-gray-500 dark:text-slate-400">مغلق نهائياً</span>
-            <span className="text-2xl font-bold text-red-600 dark:text-red-400">{stats['مغلق نهائياً'] || 0}</span>
-          </button>
-        </div>
-
-        {/* حقول وهمية تمنع المتصفح من الملء التلقائي */}
-        <div style={{ display: 'none' }} aria-hidden="true">
-          <input type="text" name="fakeusernameremembered" tabIndex={-1} autoComplete="username" />
-          <input type="password" name="fakepasswordremembered" tabIndex={-1} autoComplete="current-password" />
-        </div>
-
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700/50 mb-6 flex flex-col md:flex-row gap-4 items-end">
-          <div className="flex-1 w-full">
-            <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">بحث</label>
-            <input
-              type="text"
-              id="table-search-box"
-              name="table-search-box"
-              autoComplete="off"
-              data-lpignore="true"
-              data-form-type="other"
-              placeholder="ابحث برقم الفرع، الاسم، أو التصنيف..."
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="w-full md:w-48">
-            <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">من تاريخ الإنشاء</label>
-            <input
-              type="date"
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </div>
-          <div className="w-full md:w-48">
-            <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">إلى تاريخ الإنشاء</label>
-            <input
-              type="date"
-              className="w-full px-4 py-2 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="overflow-auto max-h-[600px] bg-white dark:bg-slate-800 shadow-sm rounded-xl border border-gray-100 dark:border-slate-700/50">
-          <table className="min-w-full text-right border-collapse">
-            <thead className="sticky top-0 bg-gray-100 dark:bg-slate-800 border-b-2 border-gray-200 dark:border-slate-700 z-10 shadow-sm">
-              <tr>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">رقم الفرع</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الاسم (AR)</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">التصنيف والمنطقة</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">العنوان والضريبة</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">اليوزر</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">اسم الطابعة</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الباسوورد</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">التسلسل</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الحالة</th>
-                <th className="p-4 text-sm font-semibold text-gray-600 dark:text-slate-300">الخيارات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-slate-700">
-              {filteredData.map(row => {
-                const rowBorderClass =
-                  row.حالة_اليوزر === 'يعمل' ? 'border-r-4 border-r-green-500' :
-                    row.حالة_اليوزر === 'مغلق نهائياً' ? 'border-r-4 border-r-red-500' :
-                      row.حالة_اليوزر === 'الافتتاح قريبا' ? 'border-r-4 border-r-blue-500' :
-                        'border-r-4 border-r-yellow-500';
-
-                const rowBgClass =
-                  row.تصنيف_الفرع === 'فلورينا' ? 'bg-sky-100/70 dark:bg-sky-950/30' :
-                  row.تصنيف_الفرع === 'فرنشايز' ? 'bg-purple-100/70 dark:bg-purple-950/30' :
-                  row.تصنيف_الفرع === 'جملة' ? 'bg-amber-100/70 dark:bg-amber-950/30' :
-                  row.تصنيف_الفرع === 'موزع معتمد' ? 'bg-emerald-100/70 dark:bg-emerald-950/30' :
-                  row.تصنيف_الفرع === 'اسكتشر' ? 'bg-indigo-100/70 dark:bg-indigo-950/30' :
-                  row.تصنيف_الفرع === 'فيلانتو' ? 'bg-rose-100/70 dark:bg-rose-950/30' :
-                  'bg-white dark:bg-slate-800';
-
-                const rowBorderColorClass =
-                  row.تصنيف_الفرع === 'فلورينا' ? 'border-sky-300 dark:border-sky-700' :
-                  row.تصنيف_الفرع === 'فرنشايز' ? 'border-purple-300 dark:border-purple-700' :
-                  row.تصنيف_الفرع === 'جملة' ? 'border-amber-300 dark:border-amber-700' :
-                  row.تصنيف_الفرع === 'موزع معتمد' ? 'border-emerald-300 dark:border-emerald-700' :
-                  row.تصنيف_الفرع === 'اسكتشر' ? 'border-indigo-300 dark:border-indigo-700' :
-                  row.تصنيف_الفرع === 'فيلانتو' ? 'border-rose-300 dark:border-rose-700' :
-                  'border-gray-200 dark:border-slate-700';
-
-                return (
-                  <tr key={row.id} className={`border-b-2 ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/30 dark:hover:bg-slate-700/30 transition-colors ${rowBorderClass}`}>
-                    <td className="p-4 font-medium text-gray-900 dark:text-slate-100">{row.رقم_الفرع}</td>
-                    <td className="p-4">
-                      <div className="flex flex-col">
-                        <span className="text-gray-900 dark:text-slate-100 font-medium">{row.اسم_الفرع_ar}</span>
-                        <span className="text-xs text-gray-500 dark:text-slate-400 uppercase">{row.اسم_الفرع_en}</span>
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => setActiveCategory(cat.id === 'all' ? null : cat.id)}
+                      className={`group flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-sm border text-base font-bold transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 lg:w-full hover:scale-[1.02] active:scale-[0.98] ${isActive
+                          ? theme.activeBg + ' border-transparent text-white shadow-md'
+                          : 'border-gray-200 dark:border-slate-700/60 text-gray-700 dark:text-slate-300 bg-gray-50/50 dark:bg-slate-900/10'
+                        }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className={`p-1.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isActive ? 'bg-white/20 text-white' : theme.iconBg + ' ' + theme.iconColor}`}>
+                          {renderCategoryIcon(cat.id, "w-4 h-4")}
+                        </span>
+                        <span className="transition-transform duration-300 group-hover:translate-x-[-3px]">
+                          {cat.name}
+                        </span>
                       </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-col">
-                        <span className="text-gray-700 dark:text-slate-300 font-medium">{row.تصنيف_الفرع || '—'}</span>
-                        <span className="text-xs text-indigo-600 dark:text-indigo-400">{row.المنطقة || '—'}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex flex-col gap-1">
-                        <div className="text-xs text-gray-600 dark:text-slate-400">
-                          {row.اسم_المدينة || row.اسم_الشارع ? (
-                            <>
-                              {row.اسم_المدينة} {row.اسم_الشارع && ` - ${row.اسم_الشارع}`}
-                            </>
-                          ) : '—'}
-                        </div>
-                        {row.الرقم_الضريبي && (
-                          <div className="text-[10px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded w-fit text-gray-500">
-                            ضريبي: {row.الرقم_الضريبي}
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4 text-gray-700 dark:text-slate-300">{row.اسم_اليوزر}</td>
-                    <td className="p-4 text-gray-700 dark:text-slate-300 text-xs">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-semibold text-indigo-600 dark:text-indigo-400">A4: {row.طابعة_a4 || '—'}</span>
-                        <span className="text-gray-500 dark:text-slate-400">فاتورة: {row.طابعة_فواتير || '—'}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      {decryptedPasswords[row.id] ? (
-                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                          <span className="font-mono text-green-600 dark:text-green-400 font-bold tracking-wider">{decryptedPasswords[row.id]}</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              copyToClipboard(decryptedPasswords[row.id]);
-                              setDecryptedPasswords({});
-                            }}
-                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/50 p-2 rounded-xl transition-all hover:scale-110 flex items-center justify-center border border-indigo-100/50 dark:border-indigo-900/30"
-                            title="نسخ كلمة المرور"
-                          >
-                            <Copy className="w-5 h-5" />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-gray-400 tracking-widest">••••••</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleShowPassword(row.id);
-                            }}
-                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/50 p-2 rounded-xl transition-all hover:scale-110 flex items-center justify-center border border-indigo-100/50 dark:border-indigo-900/30"
-                            title="إظهار كلمة المرور"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                    <td className="p-4 text-center text-gray-700 dark:text-slate-300">{row.serial_number || '—'}</td>
-                    <td className="p-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${row.حالة_اليوزر === 'يعمل' ? 'bg-green-100 dark:bg-green-950/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-900/50' :
-                          row.حالة_اليوزر === 'مغلق نهائياً' ? 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-900/50' :
-                            row.حالة_اليوزر === 'الافتتاح قريبا' ? 'bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50' :
-                              'bg-yellow-100 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-900/50'
+
+                      <span className={`text-xs font-black px-2 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isActive ? theme.badgeActive : theme.badgeInactive
                         }`}>
-                        {row.حالة_اليوزر}
+                        {count}
                       </span>
-                    </td>
-                    <td className="p-4 flex gap-2">
-                      <button
-                        onClick={() => handleEditClick(row)}
-                        className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/50 p-2 rounded-lg transition-colors"
-                        title="تعديل"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => handlePrint(row)}
-                        className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/50 p-2 rounded-lg transition-colors"
-                        title="طباعة A4"
-                      >
-                        <Printer className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteClick(row);
-                        }}
-                        className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 bg-red-50 dark:bg-red-950/50 p-2 rounded-lg transition-colors"
-                        title="حذف الفرع"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* الجزء السفلي - اسم المستخدم والإعدادات والخروج */}
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700/60 flex flex-col gap-2.5 px-2.5">
+              {/* بيانات المستخدم */}
+              <div className="flex items-center gap-2.5 px-1 py-0.5">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold text-sm shrink-0 shadow-inner">
+                  {userEmail ? userEmail.substring(0, 2).toUpperCase() : 'U'}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-bold text-gray-800 dark:text-slate-200 truncate">
+                    {userEmail ? userEmail.split('@')[0] : 'مستخدم سيرفر'}
+                  </span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 truncate">
+                    {userEmail || 'user@server.com'}
+                  </span>
+                </div>
+              </div>
+
+              {/* أزرار التحكم */}
+              <div className="flex flex-col gap-1">
+                <Link
+                  href="/admin"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-150 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>الاعدادات</span>
+                </Link>
+
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer w-full text-right"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>تسجيل الخروج</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* القسم الأيسر - المحتوى الرئيسي */}
+          <div className="flex-1 min-w-0 w-full">
+
+            {/* قسم الإحصائيات (التقارير) */}
+            <div className="w-full md:max-w-[996px] flex flex-row gap-2.5 mb-2">
+              <button
+                onClick={() => setStatusFilter(statusFilter === 'يعمل' ? null : 'يعمل')}
+                className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === 'يعمل'
+                  ? 'bg-green-600 border-transparent text-white ring-2 ring-green-500/20'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-green-500 hover:shadow-md'
+                  }`}
+              >
+                <span>يعمل</span>
+                <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === 'يعمل' ? 'bg-white/20 text-white' : 'bg-green-100 dark:bg-green-950/40 text-green-600 dark:text-green-400'}`}>
+                  {stats['يعمل'] || 0}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter(statusFilter === 'الافتتاح قريبا' ? null : 'الافتتاح قريبا')}
+                className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === 'الافتتاح قريبا'
+                  ? 'bg-blue-600 border-transparent text-white ring-2 ring-blue-500/20'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-blue-500 hover:shadow-md'
+                  }`}
+              >
+                <span>الافتتاح قريبا</span>
+                <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === 'الافتتاح قريبا' ? 'bg-white/20 text-white' : 'bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400'}`}>
+                  {stats['الافتتاح قريبا'] || 0}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter(statusFilter === 'مغلق مؤقتا' ? null : 'مغلق مؤقتا')}
+                className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === 'مغلق مؤقتا'
+                  ? 'bg-yellow-500 border-transparent text-white ring-2 ring-yellow-400/20'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-yellow-500 hover:shadow-md'
+                  }`}
+              >
+                <span>مغلق مؤقتا</span>
+                <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === 'مغلق مؤقتا' ? 'bg-white/20 text-white' : 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-600 dark:text-yellow-400'}`}>
+                  {stats['مغلق مؤقتا'] || 0}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setStatusFilter(statusFilter === 'مغلق نهائياً' ? null : 'مغلق نهائياً')}
+                className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === 'مغلق نهائياً'
+                  ? 'bg-red-600 border-transparent text-white ring-2 ring-red-500/20'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-red-500 hover:shadow-md'
+                  }`}
+              >
+                <span>مغلق نهائياً</span>
+                <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === 'مغلق نهائياً' ? 'bg-white/20 text-white' : 'bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400'}`}>
+                  {stats['مغلق نهائياً'] || 0}
+                </span>
+              </button>
+            </div>
+
+            {/* حقول وهمية تمنع المتصفح من الملء التلقائي */}
+            <div style={{ display: 'none' }} aria-hidden="true">
+              <input type="text" name="fakeusernameremembered" tabIndex={-1} autoComplete="username" />
+              <input type="password" name="fakepasswordremembered" tabIndex={-1} autoComplete="current-password" />
+            </div>
+
+            <div className="w-full md:max-w-[996px] bg-white dark:bg-slate-800 p-2 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-2 flex flex-col md:flex-row gap-2.5 items-end justify-start">
+              <div className="w-full md:w-80">
+                <label className="block text-xs font-bold text-gray-600 dark:text-slate-400 mb-0.5">بحث</label>
+                <input
+                  type="text"
+                  id="table-search-box"
+                  name="table-search-box"
+                  autoComplete="off"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  placeholder="ابحث برقم الفرع، الاسم، أو التصنيف..."
+                  className="w-full px-2.5 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <div className="w-full md:w-44">
+                <label className="block text-xs font-bold text-gray-600 dark:text-slate-400 mb-0.5">من تاريخ الإنشاء</label>
+                <input
+                  type="date"
+                  className="w-full px-2.5 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div className="w-full md:w-44">
+                <label className="block text-xs font-bold text-gray-600 dark:text-slate-400 mb-0.5">إلى تاريخ الإنشاء</label>
+                <input
+                  type="date"
+                  className="w-full px-2.5 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-transparent transition-all"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+
+              <div className="flex gap-2 w-full md:w-auto justify-end">
+                <Link
+                  href="/account/add"
+                  className="bg-green-600 hover:bg-green-700 transition-colors text-white px-3 py-1 rounded-sm shadow-md text-sm font-semibold flex items-center gap-1.5 h-[32px] shrink-0 animate-fade-in"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                  </svg>
+                  إضافة سيرفر جديد
+                </Link>
+                <button
+                  onClick={exportToCSV}
+                  className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-3 py-1 rounded-sm shadow-md text-sm font-semibold flex items-center gap-1.5 h-[32px] shrink-0 animate-fade-in"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  تصدير إلى Excel
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-auto max-h-[680px] bg-white dark:bg-slate-800 shadow-sm rounded-sm border border-gray-200 dark:border-slate-700">
+              <table className="min-w-full text-right border-collapse">
+                <thead className="sticky top-0 bg-gray-150 dark:bg-slate-800 border-b border-gray-300 dark:border-slate-600 z-10 shadow-sm">
+                  <tr>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">رقم الفرع</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الاسم (AR)</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">التصنيف والمنطقة</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">العنوان والضريبة</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اليوزر</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اسم الطابعة</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الباسوورد</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">التسلسل</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الحالة</th>
+                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الخيارات</th>
                   </tr>
-                );
-              })}
-              {filteredData.length === 0 && (
-                <tr>
-                  <td colSpan={10} className="p-8 text-center text-gray-500 dark:text-slate-400">
-                    لا توجد بيانات مطابقة للبحث
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                  {filteredData.map(row => {
+                    const rowBorderClass =
+                      row.حالة_اليوزر === 'يعمل' ? 'border-r-2 border-r-green-500' :
+                        row.حالة_اليوزر === 'مغلق نهائياً' ? 'border-r-2 border-r-red-500' :
+                          row.حالة_اليوزر === 'الافتتاح قريبا' ? 'border-r-2 border-r-blue-500' :
+                            'border-r-2 border-r-yellow-500';
+
+                    const rowBgClass =
+                      row.تصنيف_الفرع === 'فلورينا' ? 'bg-sky-100/40 dark:bg-sky-950/20' :
+                        row.تصنيف_الفرع === 'فرنشايز' ? 'bg-purple-100/40 dark:bg-purple-950/20' :
+                          row.تصنيف_الفرع === 'جملة' ? 'bg-amber-100/40 dark:bg-amber-950/20' :
+                            row.تصنيف_الفرع === 'موزع معتمد' ? 'bg-emerald-100/40 dark:bg-emerald-950/20' :
+                              row.تصنيف_الفرع === 'اسكتشر' ? 'bg-indigo-100/40 dark:bg-indigo-950/20' :
+                                row.تصنيف_الفرع === 'فيلانتو' ? 'bg-rose-100/40 dark:bg-rose-950/20' :
+                                  'bg-white dark:bg-slate-800';
+
+                    const rowBorderColorClass =
+                      row.تصنيف_الفرع === 'فلورينا' ? 'border-sky-200 dark:border-sky-900/60' :
+                        row.تصنيف_الفرع === 'فرنشايز' ? 'border-purple-200 dark:border-purple-900/60' :
+                          row.تصنيف_الفرع === 'جملة' ? 'border-amber-200 dark:border-amber-900/60' :
+                            row.تصنيف_الفرع === 'موزع معتمد' ? 'border-emerald-200 dark:border-emerald-900/60' :
+                              row.تصنيف_الفرع === 'اسكتشر' ? 'border-indigo-200 dark:border-indigo-900/60' :
+                                row.تصنيف_الفرع === 'فيلانتو' ? 'border-rose-200 dark:border-rose-900/60' :
+                                  'border-gray-200 dark:border-slate-700/60';
+
+                    return (
+                      <tr key={row.id} className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass}`}>
+                        <td className="px-2 py-1 text-sm font-bold text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700/60">{row.رقم_الفرع}</td>
+                        <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                          <div className="flex flex-col">
+                            <span className="text-gray-900 dark:text-slate-100 font-semibold">{row.اسم_الفرع_ar}</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-400 uppercase font-mono">{row.اسم_الفرع_en}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                          <div className="flex flex-col">
+                            <span className="text-gray-700 dark:text-slate-300 font-semibold">{row.تصنيف_الفرع || '—'}</span>
+                            <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">{row.المنطقة || '—'}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                          <div className="flex flex-col gap-0.5">
+                            <div className="text-xs text-gray-600 dark:text-slate-400">
+                              {row.اسم_المدينة || row.اسم_الشارع ? (
+                                <>
+                                  {row.اسم_المدينة} {row.اسم_الشارع && ` - ${row.اسم_الشارع}`}
+                                </>
+                              ) : '—'}
+                            </div>
+                            {row.الرقم_الضريبي && (
+                              <div className="text-[11px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.25 rounded-sm w-fit text-gray-500 font-semibold">
+                                ضريبي: {row.الرقم_الضريبي}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.اسم_اليوزر}</td>
+                        <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/60">
+                          <div className="flex flex-col gap-0.5 text-xs">
+                            <span className="font-semibold text-indigo-600 dark:text-indigo-400 font-mono">A4: {row.طابعة_a4 || '—'}</span>
+                            <span className="text-gray-500 dark:text-slate-400 font-mono">فاتورة: {row.طابعة_فواتير || '—'}</span>
+                          </div>
+                        </td>
+                        <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                          {decryptedPasswords[row.id] ? (
+                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <span className="font-mono text-green-600 dark:text-green-400 font-bold tracking-wider">{decryptedPasswords[row.id]}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  copyToClipboard(decryptedPasswords[row.id]);
+                                  setDecryptedPasswords({});
+                                }}
+                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/50 p-1 rounded-sm border border-indigo-150/40 dark:border-indigo-900/30 transition-colors"
+                                title="نسخ كلمة المرور"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                              <span className="text-gray-400 tracking-widest font-mono">••••••</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleShowPassword(row.id);
+                                }}
+                                className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/50 p-1 rounded-sm border border-indigo-150/40 dark:border-indigo-900/30 transition-colors"
+                                title="إظهار كلمة المرور"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
+                        <td className="px-2 py-1 text-sm text-center text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.serial_number || '—'}</td>
+                        <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                          <span className={`px-1.5 py-0.5 rounded-sm text-xs font-bold ${row.حالة_اليوزر === 'يعمل' ? 'bg-green-100 dark:bg-green-950/30 text-green-800 dark:text-green-400 border border-green-200/50 dark:border-green-900/50' :
+                            row.حالة_اليوزر === 'مغلق نهائياً' ? 'bg-red-100 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200/50 dark:border-red-900/50' :
+                              row.حالة_اليوزر === 'الافتتاح قريبا' ? 'bg-blue-100 dark:bg-blue-950/30 text-blue-800 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/50' :
+                                'bg-yellow-100 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-400 border border-yellow-200/50 dark:border-yellow-900/50'
+                            }`}>
+                            {row.حالة_اليوزر}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1 text-sm flex gap-1 border border-gray-200 dark:border-slate-700/60">
+                          <button
+                            onClick={() => handleEditClick(row)}
+                            className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-200 bg-indigo-50 dark:bg-indigo-950/50 p-1 rounded-sm border border-indigo-100 dark:border-indigo-900/20 transition-colors"
+                            title="تعديل"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handlePrint(row)}
+                            className="text-blue-600 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/50 p-1 rounded-sm border border-blue-100 dark:border-blue-900/20 transition-colors"
+                            title="طباعة A4"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteClick(row);
+                            }}
+                            className="text-red-600 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 bg-red-50 dark:bg-red-950/50 p-1 rounded-sm border border-red-100 dark:border-red-900/20 transition-colors"
+                            title="حذف الفرع"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredData.length === 0 && (
+                    <tr>
+                      <td colSpan={10} className="p-8 text-center text-gray-500 dark:text-slate-400">
+                        لا توجد بيانات مطابقة للبحث
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -612,7 +866,7 @@ export default function AccountServersTable() {
               </div>
               <h3 className="text-xl font-bold">تأكيد حذف الفرع</h3>
             </div>
-            
+
             <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">
               أنت على وشك حذف الفرع <span className="font-bold text-gray-900 dark:text-white">({serverToDelete?.رقم_الفرع})</span>. لا يمكن التراجع عن هذا الإجراء.
               <br /><br />
@@ -865,17 +1119,16 @@ export default function AccountServersTable() {
           </div>
         </div>
       )}
-      
+
       {printingRecord && <PrintableBranchFoundation server={printingRecord} />}
 
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
-          <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border ${
-            toast.type === 'success' 
-              ? 'bg-white dark:bg-slate-800 border-green-100 dark:border-green-900/30 text-green-600 dark:text-green-400' 
+          <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border ${toast.type === 'success'
+              ? 'bg-white dark:bg-slate-800 border-green-100 dark:border-green-900/30 text-green-600 dark:text-green-400'
               : 'bg-white dark:bg-slate-800 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400'
-          }`}>
+            }`}>
             <span className="font-bold text-sm">{toast.message}</span>
           </div>
         </div>
@@ -883,9 +1136,8 @@ export default function AccountServersTable() {
 
       {/* Countdown Toast for Password */}
       {(countdown !== null || isExiting) && (
-        <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-1000 ease-in-out ${
-          isExiting ? 'opacity-0 -translate-y-8' : 'opacity-100 translate-y-0 animate-in slide-in-from-top-4 fade-in'
-        }`}>
+        <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-1000 ease-in-out ${isExiting ? 'opacity-0 -translate-y-8' : 'opacity-100 translate-y-0 animate-in slide-in-from-top-4 fade-in'
+          }`}>
           <div className="px-6 py-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-indigo-100 dark:border-indigo-900/30 rounded-3xl shadow-2xl flex flex-col items-center gap-2">
             <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">{countdown ?? 0}</span>
             <span className="text-xs font-bold text-gray-500 dark:text-slate-400">سيختفي الباسوورد خلال {countdown ?? 0} ثواني</span>

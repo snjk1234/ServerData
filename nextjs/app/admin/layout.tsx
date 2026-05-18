@@ -8,7 +8,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const supabase = await createClient();
-  const user = await getUser(supabase);
+  const user = await getUser(supabase as any);
 
   // We rely on proxy.ts for route protection. 
   // If there's a user, we show the header.

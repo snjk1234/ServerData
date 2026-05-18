@@ -63,7 +63,7 @@ export default function AccountPage({
 
   const handleSignOut = async () => {
     setLoading(true);
-    const api = createApiClient(supabase);
+    const api = createApiClient(supabase as any);
     await api.signOut();
     toast({
       title: 'Signed out successfully!'

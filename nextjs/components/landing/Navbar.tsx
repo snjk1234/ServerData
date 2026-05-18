@@ -47,7 +47,7 @@ const routeList: RouteProps[] = [
 export const Navbar = ({ user }: { user: User | null }) => {
   const router = useRouter();
   const { toast } = useToast();
-  const api = createApiClient(createClient());
+  const api = createApiClient(createClient() as any);
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const handleAuth = async () => {
     if (user) {

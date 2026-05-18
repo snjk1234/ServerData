@@ -50,7 +50,7 @@ export default function AddServerPage() {
 
   useEffect(() => {
     const fetchExisting = async () => {
-      const { data } = await supabase.from('server_data').select('رقم_الفرع, اسم_الفرع_ar, تصنيف_الفرع, serial_number, طابعة_a4, طابعة_فواتير');
+      const { data } = await (supabase as any).from('server_data').select('رقم_الفرع, اسم_الفرع_ar, تصنيف_الفرع, serial_number, طابعة_a4, طابعة_فواتير');
       if (data) setAllRecords(data);
     };
     fetchExisting();
@@ -114,7 +114,7 @@ export default function AddServerPage() {
     setValidationError(null);
 
     try {
-      const { data: freshRecords, error: fetchError } = await supabase
+      const { data: freshRecords, error: fetchError } = await (supabase as any)
         .from('server_data')
         .select('رقم_الفرع, اسم_الفرع_ar, طابعة_a4, طابعة_فواتير');
       
@@ -122,7 +122,7 @@ export default function AddServerPage() {
 
       if (freshRecords) {
         setAllRecords(freshRecords);
-        const duplicate = freshRecords.find(r => r.طابعة_a4 === a4Printer || r.طابعة_فواتير === billPrinter);
+        const duplicate = freshRecords.find((r: any) => r.طابعة_a4 === a4Printer || r.طابعة_فواتير === billPrinter);
         if (duplicate) {
           setConflictRecord(duplicate);
           setManualA4(a4Printer);
@@ -133,7 +133,7 @@ export default function AddServerPage() {
       }
 
       const encryptedPassword = CryptoJS.AES.encrypt(password, 'sols').toString();
-      const { error: insertError } = await supabase
+      const { error: insertError } = await (supabase as any)
         .from('server_data')
         .insert([
           {

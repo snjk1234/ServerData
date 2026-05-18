@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import { ShareButton } from '@/components/ui/ShareButton';
@@ -56,97 +56,112 @@ export default function AdminLoginPageClient() {
     }
   };
 
+  // Listen for auth state changes
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        router.push('/account');
+        router.refresh();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [router, supabase]);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans" dir="rtl">
-      <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-gray-900">
-            {isLogin ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
-          </h2>
-          <p className="text-gray-500 mt-2">
-            {isLogin ? 'قم بتسجيل الدخول للوصول إلى لوحة الإدارة' : 'أدخل بياناتك لإنشاء حساب جديد'}
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans p-6" dir="rtl">
+      {/* Container - Improved Gray Aesthetic */}
+      <div className="max-w-md w-full bg-gray-200 rounded-[2.5rem] shadow-2xl border border-gray-300 relative overflow-hidden">
+        
+        {/* Title Area - Darker Background as requested */}
+        <div className="bg-gray-300 py-8 text-center border-b border-gray-400/30">
+          <h1 className="text-2xl font-black text-gray-800 tracking-tight">
+            {isLogin ? 'Sign In' : 'Sign Up'}
+          </h1>
+          <div className="h-1 w-12 bg-gray-400 mx-auto mt-2 rounded-full opacity-50" />
         </div>
 
-        {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm font-medium border border-red-100">
-            {error}
-          </div>
-        )}
+        <div className="p-10 pt-8">
+          {error && (
+            <div className="bg-red-500/10 text-red-600 p-4 rounded-2xl mb-6 text-xs font-bold border border-red-200/20 text-center animate-in zoom-in">
+              {error}
+            </div>
+          )}
 
-        {successMsg && (
-          <div className="bg-green-50 text-green-600 p-4 rounded-lg mb-6 text-sm font-medium border border-green-100">
-            {successMsg}
-          </div>
-        )}
+          {successMsg && (
+            <div className="bg-green-500/10 text-green-600 p-4 rounded-2xl mb-6 text-xs font-bold border border-green-200/20 text-center animate-in zoom-in">
+              {successMsg}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              البريد الإلكتروني (اسم المستخدم)
-            </label>
-            <input
-              type="email"
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all"
-              placeholder="admin@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div>
+              <label className="block text-[10px] font-black text-gray-500 mb-2 mr-2 uppercase tracking-widest">
+                البريد الإلكتروني
+              </label>
+              <input
+                type="email"
+                required
+                className="w-full px-5 py-4 bg-gray-100 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:bg-white transition-all text-sm placeholder-gray-400"
+                placeholder="admin@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-black text-gray-500 mb-2 mr-2 uppercase tracking-widest">
+                كلمة المرور
+              </label>
+              <input
+                type="password"
+                required
+                className="w-full px-5 py-4 bg-gray-100 border border-gray-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-gray-400 focus:bg-white transition-all text-sm text-left placeholder-gray-400"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                dir="ltr"
+              />
+            </div>
+
+            {/* Button - Lightened as requested (from gray-800 to gray-500) */}
+            <button
+              type="submit"
               disabled={loading}
-            />
+              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-black py-4 px-6 rounded-2xl transition-all shadow-xl active:scale-[0.97] flex justify-center items-center gap-3"
+            >
+              {loading ? (
+                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <span className="text-sm tracking-wide">{isLogin ? 'Sign In' : 'Sign Up'}</span>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-10 text-center space-y-8">
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError(null);
+                setSuccessMsg(null);
+              }}
+              className="text-[11px] text-gray-500 hover:text-black font-black transition-colors uppercase tracking-tight"
+            >
+              {isLogin ? 'إنشاء حساب جديد ؟' : 'العودة لتسجيل الدخول'}
+            </button>
+
+            <div className="relative flex items-center justify-center">
+              <div className="flex-grow border-t border-gray-300"></div>
+              <span className="flex-shrink mx-4 text-gray-400 text-[9px] font-black uppercase tracking-[0.3em]">أو شارك التطبيق</span>
+              <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+
+            <ShareButton floating={false} className="w-full flex justify-center py-3 rounded-2xl border-2 border-dashed border-gray-300 hover:border-gray-400 hover:bg-white/40 transition-all text-xs font-bold text-gray-500" />
           </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              كلمة المرور
-            </label>
-            <input
-              type="password"
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-left"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              dir="ltr"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex justify-center items-center"
-          >
-            {loading ? (
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            ) : (
-              isLogin ? 'دخول' : 'إنشاء حساب'
-            )}
-          </button>
-        </form>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={() => {
-              setIsLogin(!isLogin);
-              setError(null);
-              setSuccessMsg(null);
-            }}
-            className="text-sm text-indigo-600 hover:text-indigo-800 font-medium transition-colors"
-          >
-            {isLogin ? 'ليس لديك حساب؟ قم بإنشاء حساب جديد' : 'لديك حساب بالفعل؟ قم بتسجيل الدخول'}
-          </button>
-
-          <div className="relative flex py-5 items-center">
-            <div className="flex-grow border-t border-gray-200"></div>
-            <span className="flex-shrink mx-4 text-gray-400 text-xs font-medium">أو شارك التطبيق</span>
-            <div className="flex-grow border-t border-gray-200"></div>
-          </div>
-
-          <ShareButton floating={false} className="w-full flex justify-center py-2.5 rounded-xl border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50/50" />
         </div>
       </div>
     </div>
