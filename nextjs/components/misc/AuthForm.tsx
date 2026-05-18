@@ -254,38 +254,39 @@ export function AuthForm({ state }: { state: AuthState }) {
 
   const currState = stateInfo[authState];
   return (
-    <div className="mx-auto w-full max-w-sm">
-      <div className="grid gap-4">
+    <div className="mx-auto w-full max-w-[320px]">
+      <div className="grid gap-3.5">
         {currState.description && (
-          <p className="text-sm text-gray-500 mb-4 text-center">{currState.description}</p>
+          <p className="text-sm text-indigo-200/90 mb-4 text-center leading-relaxed font-bold">{currState.description}</p>
         )}
-        <div className="grid gap-4">
+        <div className="grid gap-3">
           {currState.hasEmailField && (
-            <div className="grid gap-2">
-              <Label htmlFor="email" className="text-[10px] font-black text-gray-500 uppercase tracking-widest mr-2">Email</Label>
+            <div className="grid gap-1">
+              <Label htmlFor="email" className="text-xs font-extrabold text-white/90">البريد الإلكتروني</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
-                className="bg-gray-100 border-gray-300 rounded-2xl focus:ring-gray-400"
+                className="w-full pl-4 pr-4 py-2 bg-transparent border-0 border-b border-white/30 rounded-sm focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all text-sm font-mono text-white placeholder:text-white/30 text-left shadow-none"
+                dir="ltr"
                 required
               />
             </div>
           )}
           {currState.hasPasswordField && (
-            <div className="grid gap-2">
+            <div className="grid gap-1">
               <div className="flex items-center">
-                <Label htmlFor="password" className="text-[10px] font-black text-gray-500 uppercase tracking-widest mr-2">Password</Label>
+                <Label htmlFor="password" className="text-xs font-extrabold text-white/90">كلمة المرور</Label>
                 {authState === 'signin' && (
                   <Link
                     href="#"
                     onClick={() => setAuthState(AuthState.ForgotPassword)}
-                    className="ml-auto inline-block text-[10px] font-bold text-gray-400 hover:text-black transition-colors"
+                    className="ml-auto inline-block text-[11px] font-bold text-indigo-300 hover:text-indigo-100 transition-colors"
                   >
-                    Forgot?
+                    نسيت كلمة المرور؟
                   </Link>
                 )}
               </div>
@@ -297,7 +298,8 @@ export function AuthForm({ state }: { state: AuthState }) {
                   value={password}
                   required
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pr-10 bg-gray-100 border-gray-300 rounded-2xl focus:ring-gray-400"
+                  className="w-full pl-10 pr-4 py-2 bg-transparent border-0 border-b border-white/30 rounded-sm focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all text-sm font-mono text-white placeholder:text-white/30 tracking-widest text-left shadow-none"
+                  dir="ltr"
                 />
                 <button
                   type="button"
@@ -307,21 +309,21 @@ export function AuthForm({ state }: { state: AuthState }) {
                       setShowConfirmPassword(!showPassword);
                     }
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
                   disabled={loading}
                 >
                   {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
             </div>
           )}
           {authState === 'signup' && (
-            <div className="grid gap-2">
-              <Label htmlFor="confirmPassword" className="text-[10px] font-black text-gray-500 uppercase tracking-widest mr-2">Confirm Password</Label>
+            <div className="grid gap-1">
+              <Label htmlFor="confirmPassword" className="text-xs font-extrabold text-white/90">تأكيد كلمة المرور</Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -330,7 +332,8 @@ export function AuthForm({ state }: { state: AuthState }) {
                   value={confirmPassword}
                   required
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="pr-10 bg-gray-100 border-gray-300 rounded-2xl focus:ring-gray-400"
+                  className="w-full pl-10 pr-4 py-2 bg-transparent border-0 border-b border-white/30 rounded-sm focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 transition-all text-sm font-mono text-white placeholder:text-white/30 tracking-widest text-left shadow-none"
+                  dir="ltr"
                 />
                 <button
                   type="button"
@@ -338,109 +341,114 @@ export function AuthForm({ state }: { state: AuthState }) {
                     setShowPassword(!showConfirmPassword);
                     setShowConfirmPassword(!showConfirmPassword);
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white transition-colors"
                   disabled={loading}
                 >
                   {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="h-4 w-4" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
             </div>
           )}
-          <Button
-            type="submit"
-            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-black py-6 rounded-2xl transition-all shadow-xl active:scale-[0.97]"
-            onClick={currState.onSubmit}
-            disabled={loading}
-          >
-            {loading ? (
-                <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                currState.submitText
-              )}
-          </Button>
+          <div className="flex justify-center mt-4">
+            <Button
+              type="submit"
+              className="w-[75%] h-9 bg-indigo-600 hover:bg-indigo-500 text-white font-black py-0 px-4 text-sm rounded-lg transition-all flex justify-center items-center shadow-[0_4px_14px_0_rgba(79,70,229,0.39)] hover:shadow-[0_6px_20px_rgba(79,70,229,0.23)] active:scale-[0.98]"
+              onClick={currState.onSubmit}
+              disabled={loading}
+            >
+              {loading ? (
+                  <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  currState.submitText === 'Sign In' ? 'تسجيل الدخول' :
+                  currState.submitText === 'Sign Up' ? 'إنشاء حساب' :
+                  currState.submitText === 'Send Email' ? 'إرسال رابط' :
+                  currState.submitText === 'Update Password' ? 'تحديث كلمة المرور' : currState.submitText
+                )}
+            </Button>
+          </div>
           {authState === 'signin' && (
-            <div className="text-center text-[11px] font-bold text-gray-400 mt-4 uppercase">
-              Don&apos;t have an account?{' '}
+            <div className="text-center text-xs font-bold text-white/70 mt-4">
+              ليس لديك حساب؟{' '}
               <Link
                 href="#"
-                className="text-gray-800 hover:underline"
+                className="text-indigo-300 hover:text-white hover:underline transition-all"
                 onClick={() => setAuthState(AuthState.Signup)}
               >
-                Sign up
+                قم بإنشاء حساب جديد
               </Link>
             </div>
           )}
           {authState === 'signup' && (
-            <div className="text-center text-[11px] font-bold text-gray-400 mt-4 uppercase">
-              Already have an account?{' '}
+            <div className="text-center text-xs font-bold text-white/70 mt-4">
+              لديك حساب بالفعل؟{' '}
               <Link
                 href="#"
-                className="text-gray-800 hover:underline"
+                className="text-indigo-300 hover:text-white hover:underline transition-all"
                 onClick={() => setAuthState(AuthState.Signin)}
               >
-                Sign in
+                قم بتسجيل الدخول
               </Link>
             </div>
           )}
           {authState === 'forgot_password' && (
-            <div className="text-center text-[11px] font-bold text-gray-400 mt-4 uppercase">
-              Know your password?{' '}
+            <div className="text-center text-xs font-bold text-white/70 mt-4">
+              تذكرت كلمة المرور؟{' '}
               <Link
                 href="#"
-                className="text-gray-800 hover:underline"
+                className="text-indigo-300 hover:text-white hover:underline transition-all"
                 onClick={() => setAuthState(AuthState.Signin)}
               >
-                Sign in
+                قم بتسجيل الدخول
               </Link>
             </div>
           )}
           {authState === 'verify_email' && (
             <div className="space-y-4">
-              <div className="text-center text-xs font-bold text-gray-500">
-                Email sent to: <span className="text-gray-800">{email}</span>
+              <div className="text-center text-xs font-bold text-white/70">
+                تم إرسال الرابط إلى: <span className="text-white bg-white/10 px-2 py-1 rounded-full font-mono">{email}</span>
               </div>
-              <div className="text-center text-[11px] font-bold text-gray-400 uppercase">
-                Already verified?{' '}
+              <div className="text-center text-xs font-bold text-white/70 mt-4">
+                هل قمت بالتفعيل بالفعل؟{' '}
                 <Link
                   href="#"
-                  className="text-gray-800 hover:underline"
+                  className="text-indigo-300 hover:text-white hover:underline transition-all"
                   onClick={() => setAuthState(AuthState.Signin)}
                 >
-                  Sign in
+                  قم بتسجيل الدخول
                 </Link>
               </div>
             </div>
           )}
           {currState.hasOAuth && (
             <>
-              <div className="relative my-4">
+              <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-gray-300"></span>
+                  <span className="w-full border-t border-white/20"></span>
                 </div>
-                <div className="relative flex justify-center text-[9px] font-black uppercase tracking-widest">
-                  <span className="bg-gray-200 px-3 text-gray-400">
-                    Social Login
+                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                  <span className="bg-transparent px-3 text-white/50">
+                    أو الدخول باستخدام
                   </span>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="outline"
-                  className="w-full bg-white/50 border-gray-300 rounded-2xl hover:bg-white transition-all text-xs font-bold"
+                  className="w-full bg-white/5 border-white/20 text-white rounded-lg hover:bg-white/10 hover:text-white transition-all text-xs font-bold h-11 backdrop-blur-sm"
                   onClick={() => api.oauthSignin('google')}
                 >
-                  <SiGoogle className="h-3 w-3 mr-2" /> Google
+                  <SiGoogle className="h-4 w-4 ml-2" /> جوجل
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full bg-white/50 border-gray-300 rounded-2xl hover:bg-white transition-all text-xs font-bold"
+                  className="w-full bg-white/5 border-white/20 text-white rounded-lg hover:bg-white/10 hover:text-white transition-all text-xs font-bold h-11 backdrop-blur-sm"
                   onClick={() => api.oauthSignin('github')}
                 >
-                  <SiGithub className="h-3 w-3 mr-2" /> Github
+                  <SiGithub className="h-4 w-4 ml-2" /> جيتهاب
                 </Button>
               </div>
             </>
