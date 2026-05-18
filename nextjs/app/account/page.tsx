@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
-import { Eye, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints } from 'lucide-react';
+import { Eye, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle } from 'lucide-react';
 import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
 
 const categories = [
@@ -485,14 +485,14 @@ export default function AccountServersTable() {
         <div className="flex flex-col lg:flex-row gap-3 items-start">
 
           {/* الـ Sidebar الأيمن - أقسام التصنيفات */}
-          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-1.5 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-190px)] flex flex-col justify-between shadow-sm">
+          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-1.5 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-190px)] flex flex-col justify-between shadow-sm overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div>
               <h2 className="hidden lg:flex text-sm font-bold text-gray-800 dark:text-slate-200 mb-2.5 pb-1.5 border-b border-gray-200 dark:border-slate-700 items-center gap-1.5 px-2.5">
                 <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 أقسام الفروع
               </h2>
 
-              <div className="flex flex-row overflow-x-auto lg:flex-col gap-1 pb-1 lg:pb-0 scrollbar-none no-scrollbar -mx-1 px-1 lg:mx-0 lg:px-0">
+              <div className="flex flex-row overflow-hidden lg:flex-col gap-1 pb-1 lg:pb-0 -mx-1 px-1 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {categories.map((cat) => {
                   const isActive = activeCategory === (cat.id === 'all' ? null : cat.id);
                   const theme = categoryThemes[cat.id] || categoryThemes.all;
@@ -546,7 +546,7 @@ export default function AccountServersTable() {
               {/* أزرار التحكم */}
               <div className="flex flex-col gap-1">
                 <Link
-                  href="/admin"
+                  href="/account/settings"
                   className="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-150 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -858,264 +858,325 @@ export default function AccountServersTable() {
       </div>
 
       {showDeleteDialog && (
-        <div className="fixed inset-0 bg-gray-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-red-100 dark:border-red-900/30 animate-in zoom-in duration-300">
-            <div className="flex items-center gap-3 mb-4 text-red-600">
-              <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-full">
-                <Trash2 className="w-6 h-6" />
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in px-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-sm border border-red-200 dark:border-red-900/50 overflow-hidden transform transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-slate-700 bg-red-50/50 dark:bg-red-900/10 px-4 py-3">
+              <div className="bg-red-100 dark:bg-red-900/30 p-1.5 rounded-sm">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
               </div>
-              <h3 className="text-xl font-bold">تأكيد حذف الفرع</h3>
+              <h3 className="text-sm font-extrabold text-red-700 dark:text-red-400">تأكيد حذف الفرع</h3>
             </div>
 
-            <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">
-              أنت على وشك حذف الفرع <span className="font-bold text-gray-900 dark:text-white">({serverToDelete?.رقم_الفرع})</span>. لا يمكن التراجع عن هذا الإجراء.
-              <br /><br />
-              يرجى إدخال كلمة المرور للتأكيد:
-            </p>
+            <div className="px-4 pb-4">
+              <p className="mb-4 text-xs text-gray-600 dark:text-slate-300 leading-relaxed font-medium">
+                أنت على وشك حذف الفرع <span className="font-extrabold text-gray-900 dark:text-white">({serverToDelete?.رقم_الفرع})</span>. هذا الإجراء نهائي ولا يمكن التراجع عنه.
+              </p>
 
-            {deleteError && (
-              <div className="mb-4 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg border border-red-100">
-                {deleteError}
+              {deleteError && (
+                <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-sm border border-red-200 dark:border-red-900/50 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="bg-gray-50 dark:bg-slate-900/50 p-3 rounded-sm border border-gray-200 dark:border-slate-700 mb-4">
+                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-gray-400" /> كلمة مرور التأكيد
+                </label>
+                <input
+                  type="password"
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-red-500 font-mono tracking-widest text-left"
+                  value={deleteKey}
+                  onChange={(e) => setDeleteKey(e.target.value)}
+                  placeholder="••••"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && confirmDelete()}
+                  dir="ltr"
+                />
               </div>
-            )}
 
-            <input
-              type="password"
-              className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 font-mono mb-6"
-              value={deleteKey}
-              onChange={(e) => setDeleteKey(e.target.value)}
-              placeholder="••••"
-              autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && confirmDelete()}
-            />
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteDialog(false)}
-                className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition-colors"
-              >
-                إلغاء
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="flex-1 bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 rounded-lg transition-colors shadow-md shadow-red-200 dark:shadow-none"
-              >
-                حذف نهائي
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteDialog(false)}
+                  className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold py-1.5 rounded-sm transition-colors text-xs"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  حذف نهائي
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
       {showPasswordDialog && (
-        <div className="fixed inset-0 bg-gray-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-100 dark:border-slate-700 transform transition-all scale-100">
-            <h3 className="text-xl font-bold mb-2 text-gray-900 dark:text-slate-100">الصلاحية مطلوبة</h3>
-            <p className="mb-6 text-sm text-gray-500 dark:text-slate-400">إدخال كلمة المرور</p>
-            <input
-              type="password"
-              className="w-full px-4 py-3 bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-left font-mono tracking-widest mb-6"
-              value={decryptionKey}
-              onChange={(e) => setDecryptionKey(e.target.value)}
-              placeholder="••••"
-              autoFocus
-              onKeyDown={(e) => e.key === 'Enter' && submitDecryption()}
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={submitDecryption}
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors"
-              >
-                تأكيد
-              </button>
-              <button
-                onClick={() => setShowPasswordDialog(false)}
-                className="flex-1 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-200 font-medium py-2.5 rounded-lg transition-colors"
-              >
-                إلغاء
-              </button>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in px-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-sm border border-indigo-200 dark:border-indigo-900/50 overflow-hidden transform transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-slate-700 bg-indigo-50/50 dark:bg-indigo-900/10 px-4 py-3">
+              <div className="bg-indigo-100 dark:bg-indigo-900/30 p-1.5 rounded-sm">
+                <ShieldCheck className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <h3 className="text-sm font-extrabold text-indigo-800 dark:text-indigo-400">الصلاحية مطلوبة</h3>
+            </div>
+            
+            <div className="px-4 pb-4">
+              <p className="mb-4 text-xs text-gray-600 dark:text-slate-300 leading-relaxed font-medium">
+                يرجى إدخال كلمة المرور الخاصة بالمشرف لفك تشفير وعرض الباسوورد.
+              </p>
+
+              <div className="bg-gray-50 dark:bg-slate-900/50 p-3 rounded-sm border border-gray-200 dark:border-slate-700 mb-4">
+                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-gray-400" /> كلمة مرور المشرف
+                </label>
+                <input
+                  type="password"
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-left font-mono tracking-widest"
+                  value={decryptionKey}
+                  onChange={(e) => setDecryptionKey(e.target.value)}
+                  placeholder="••••"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && submitDecryption()}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowPasswordDialog(false)}
+                  className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold py-1.5 rounded-sm transition-colors text-xs"
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={submitDecryption}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  عرض البيانات
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* نافذة تعديل البيانات (Edit Modal) */}
+      {/* Edit Modal */}
       {showEditModal && (
-        <div className="fixed inset-0 bg-gray-900/40 dark:bg-slate-950/60 backdrop-blur-sm flex items-center justify-center z-50 transition-opacity">
-          <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-100 dark:border-slate-700 overflow-y-auto max-h-[90vh]">
-            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-slate-100">تعديل بيانات السيرفر</h3>
-
-            <form onSubmit={handleUpdate} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">تصنيف الفرع</label>
-                  <select
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.تصنيف_الفرع || 'فلورينا'}
-                    onChange={(e) => setEditForm({ ...editForm, تصنيف_الفرع: e.target.value })}
-                  >
-                    <option value="فلورينا">فلورينا</option>
-                    <option value="فرنشايز">فرنشايز</option>
-                    <option value="جملة">جملة</option>
-                    <option value="موزع معتمد">موزع معتمد</option>
-                    <option value="اسكتشر">اسكتشر</option>
-                    <option value="فيلانتو">فيلانتو</option>
-                  </select>
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in px-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-3xl border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/20 px-4 py-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="bg-indigo-100 dark:bg-indigo-900/30 p-1.5 rounded-sm">
+                  <Edit className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">رقم الفرع</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.رقم_الفرع}
-                    onChange={(e) => setEditForm({ ...editForm, رقم_الفرع: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">الحالة</label>
-                  <select
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.حالة_اليوزر}
-                    onChange={(e) => setEditForm({ ...editForm, حالة_اليوزر: e.target.value })}
-                  >
-                    <option value="الافتتاح قريبا">الافتتاح قريبا</option>
-                    <option value="يعمل">يعمل</option>
-                    <option value="مغلق مؤقتا">مغلق مؤقتا</option>
-                    <option value="مغلق نهائياً">مغلق نهائياً</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">التسلسل</label>
-                  <input
-                    type="number"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.serial_number || ''}
-                    onChange={(e) => setEditForm({ ...editForm, serial_number: parseInt(e.target.value) })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">الاسم (AR)</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.اسم_الفرع_ar}
-                    onChange={(e) => setEditForm({ ...editForm, اسم_الفرع_ar: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">الاسم (EN)</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.اسم_الفرع_en}
-                    onChange={(e) => setEditForm({ ...editForm, اسم_الفرع_en: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">اليوزر</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.اسم_اليوزر}
-                    onChange={(e) => setEditForm({ ...editForm, اسم_اليوزر: e.target.value })}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">باسوورد جديد (اختياري)</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.باسوورد}
-                    onChange={(e) => setEditForm({ ...editForm, باسوورد: e.target.value })}
-                    placeholder="اتركه فارغاً للاحتفاظ بالقديم"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">المنطقة</label>
-                  <select
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.المنطقة || ''}
-                    onChange={(e) => setEditForm({ ...editForm, المنطقة: e.target.value })}
-                  >
-                    <option value="">-- اختر المنطقة --</option>
-                    <option value="1-المدينة المنورة">1 - المدينة المنورة</option>
-                    <option value="1-المنطقة الوسطى">1 - المنطقة الوسطى</option>
-                    <option value="2-الرياض">2 - الرياض</option>
-                    <option value="2-الدمام">2 - الدمام</option>
-                    <option value="3-الجنوبية - أبها">3 - الجنوبية - أبها</option>
-                    <option value="4-جدة">4 - جدة</option>
-                    <option value="4-الغربية - مكة">4 - الغربية - مكة</option>
-                    <option value="5-الشمالية تبوك">5 - الشمالية تبوك</option>
-                    <option value="5-الطائف">5 - الطائف</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">اسم الشارع</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.اسم_الشارع}
-                    onChange={(e) => setEditForm({ ...editForm, اسم_الشارع: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">اسم المدينة</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.اسم_المدينة}
-                    onChange={(e) => setEditForm({ ...editForm, اسم_المدينة: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">الرقم الضريبي</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.الرقم_الضريبي}
-                    onChange={(e) => setEditForm({ ...editForm, الرقم_الضريبي: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">طابعة A4</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.طابعة_a4}
-                    onChange={(e) => setEditForm({ ...editForm, طابعة_a4: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1">طابعة الفواتير</label>
-                  <input
-                    type="text"
-                    className="w-full bg-white dark:bg-slate-700 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded p-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    value={editForm.طابعة_فواتير}
-                    onChange={(e) => setEditForm({ ...editForm, طابعة_فواتير: e.target.value })}
-                  />
-                </div>
+                <h3 className="text-sm font-extrabold text-gray-900 dark:text-slate-100">تعديل بيانات السيرفر ({editForm.رقم_الفرع})</h3>
               </div>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
 
-              <div className="flex gap-2 pt-4 border-t border-gray-100 dark:border-slate-700">
-                <button
-                  type="submit"
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors"
-                >
-                  تحديث البيانات
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-800 dark:text-slate-200 font-medium py-2.5 rounded-lg transition-colors"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </form>
+            <div className="overflow-y-auto p-4 custom-scrollbar">
+              <form onSubmit={handleUpdate} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  
+                  {/* Row 1 */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">تصنيف الفرع</label>
+                    <select
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.تصنيف_الفرع || 'فلورينا'}
+                      onChange={(e) => setEditForm({ ...editForm, تصنيف_الفرع: e.target.value })}
+                    >
+                      <option value="فلورينا">فلورينا</option>
+                      <option value="فرنشايز">فرنشايز</option>
+                      <option value="جملة">جملة</option>
+                      <option value="موزع معتمد">موزع معتمد</option>
+                      <option value="اسكتشر">اسكتشر</option>
+                      <option value="فيلانتو">فيلانتو</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">رقم الفرع</label>
+                    <input
+                      type="text"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                      value={editForm.رقم_الفرع}
+                      onChange={(e) => setEditForm({ ...editForm, رقم_الفرع: e.target.value })}
+                      required dir="ltr"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">الحالة</label>
+                    <select
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.حالة_اليوزر}
+                      onChange={(e) => setEditForm({ ...editForm, حالة_اليوزر: e.target.value })}
+                    >
+                      <option value="الافتتاح قريبا">الافتتاح قريبا</option>
+                      <option value="يعمل">يعمل</option>
+                      <option value="مغلق مؤقتا">مغلق مؤقتا</option>
+                      <option value="مغلق نهائياً">مغلق نهائياً</option>
+                    </select>
+                  </div>
+
+                  {/* Row 2 */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">المنطقة</label>
+                    <select
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.المنطقة || ''}
+                      onChange={(e) => setEditForm({ ...editForm, المنطقة: e.target.value })}
+                    >
+                      <option value="">-- اختر المنطقة --</option>
+                      <option value="1-المدينة المنورة">1 - المدينة المنورة</option>
+                      <option value="1-المنطقة الوسطى">1 - المنطقة الوسطى</option>
+                      <option value="2-الرياض">2 - الرياض</option>
+                      <option value="2-الدمام">2 - الدمام</option>
+                      <option value="3-الجنوبية - أبها">3 - الجنوبية - أبها</option>
+                      <option value="4-جدة">4 - جدة</option>
+                      <option value="4-الغربية - مكة">4 - الغربية - مكة</option>
+                      <option value="5-الشمالية تبوك">5 - الشمالية تبوك</option>
+                      <option value="5-الطائف">5 - الطائف</option>
+                    </select>
+                  </div>
+                  <div className="lg:col-span-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">الاسم (AR)</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          value={editForm.اسم_الفرع_ar}
+                          onChange={(e) => setEditForm({ ...editForm, اسم_الفرع_ar: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">الاسم (EN)</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 uppercase font-mono tracking-wider text-left"
+                          value={editForm.اسم_الفرع_en}
+                          onChange={(e) => setEditForm({ ...editForm, اسم_الفرع_en: e.target.value })}
+                          required dir="ltr"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Security Panel */}
+                  <div className="lg:col-span-3 bg-indigo-50/50 dark:bg-indigo-950/10 p-3 rounded-sm border border-indigo-100 dark:border-indigo-900/30 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اليوزر</label>
+                      <input
+                        type="text"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                        value={editForm.اسم_اليوزر}
+                        onChange={(e) => setEditForm({ ...editForm, اسم_اليوزر: e.target.value })}
+                        required dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">باسوورد جديد <span className="text-[10px] text-gray-400 font-normal">(اختياري)</span></label>
+                      <input
+                        type="text"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                        value={editForm.باسوورد}
+                        onChange={(e) => setEditForm({ ...editForm, باسوورد: e.target.value })}
+                        placeholder="فارغ للاحتفاظ بالقديم"
+                        dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">التسلسل</label>
+                      <input
+                        type="number"
+                        className="w-full px-2.5 py-1.5 bg-gray-100 dark:bg-slate-900 text-gray-500 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none font-mono text-left"
+                        value={editForm.serial_number || ''}
+                        onChange={(e) => setEditForm({ ...editForm, serial_number: parseInt(e.target.value) })}
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Optional Data */}
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">الرقم الضريبي</label>
+                    <input
+                      type="text"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                      value={editForm.الرقم_الضريبي}
+                      onChange={(e) => setEditForm({ ...editForm, الرقم_الضريبي: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم المدينة</label>
+                    <input
+                      type="text"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.اسم_المدينة}
+                      onChange={(e) => setEditForm({ ...editForm, اسم_المدينة: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم الشارع</label>
+                    <input
+                      type="text"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.اسم_الشارع}
+                      onChange={(e) => setEditForm({ ...editForm, اسم_الشارع: e.target.value })}
+                    />
+                  </div>
+                  <div className="lg:col-span-1 md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">طابعة A4</label>
+                    <input
+                      type="text"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
+                      value={editForm.طابعة_a4}
+                      onChange={(e) => setEditForm({ ...editForm, طابعة_a4: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                  <div className="lg:col-span-2 md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">طابعة الفواتير</label>
+                    <input
+                      type="text"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
+                      value={editForm.طابعة_فواتير}
+                      onChange={(e) => setEditForm({ ...editForm, طابعة_فواتير: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-slate-700 mt-4 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold rounded-sm transition-colors text-xs"
+                  >
+                    إلغاء
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    تحديث البيانات
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
@@ -1125,11 +1186,12 @@ export default function AccountServersTable() {
       {/* Toast Notification */}
       {toast && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
-          <div className={`px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-3 border ${toast.type === 'success'
-              ? 'bg-white dark:bg-slate-800 border-green-100 dark:border-green-900/30 text-green-600 dark:text-green-400'
-              : 'bg-white dark:bg-slate-800 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400'
+          <div className={`px-4 py-2.5 rounded-sm shadow-xl flex items-center gap-2.5 border ${toast.type === 'success'
+              ? 'bg-green-50 dark:bg-green-950/80 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
+              : 'bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
             }`}>
-            <span className="font-bold text-sm">{toast.message}</span>
+            {toast.type === 'success' ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+            <span className="font-bold text-xs">{toast.message}</span>
           </div>
         </div>
       )}
@@ -1138,9 +1200,9 @@ export default function AccountServersTable() {
       {(countdown !== null || isExiting) && (
         <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-1000 ease-in-out ${isExiting ? 'opacity-0 -translate-y-8' : 'opacity-100 translate-y-0 animate-in slide-in-from-top-4 fade-in'
           }`}>
-          <div className="px-6 py-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border border-indigo-100 dark:border-indigo-900/30 rounded-3xl shadow-2xl flex flex-col items-center gap-2">
-            <span className="text-xl font-black text-indigo-600 dark:text-indigo-400">{countdown ?? 0}</span>
-            <span className="text-xs font-bold text-gray-500 dark:text-slate-400">سيختفي الباسوورد خلال {countdown ?? 0} ثواني</span>
+          <div className="px-5 py-3 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-indigo-200 dark:border-indigo-900/50 rounded-sm shadow-xl flex flex-col items-center gap-1.5 min-w-[120px]">
+            <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-widest">{countdown ?? 0}</span>
+            <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">ثانية للإخفاء</span>
           </div>
         </div>
       )}
