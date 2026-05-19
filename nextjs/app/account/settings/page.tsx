@@ -59,8 +59,9 @@ export default function SettingsPage() {
   const handleExportData = async () => {
     const { data } = await supabase.from('server_data').select('*');
     if (data) {
+      const records = data as any[];
       const headers = ['ID', 'رقم الفرع', 'اسم الفرع AR', 'اسم الفرع EN', 'اسم اليوزر', 'الحالة', 'تاريخ الانشاء'];
-      const rows = data.map(r => [
+      const rows = records.map(r => [
         r.id, r.رقم_الفرع, r.اسم_الفرع_ar, r.اسم_الفرع_en, r.اسم_اليوزر, r.حالة_اليوزر, r.تاريخ_الانشاء
       ]);
 
