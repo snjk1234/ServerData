@@ -39,7 +39,7 @@ GoRouter router(RouterRef ref) {
           // build initial path
           String? path = getSanitizedPath(initUrl?.path);
           final queryString = initUrl?.query.trim() ?? "";
-          if (queryString.isNotEmpty && path != null) {
+          if (queryString.isNotEmpty) {
             path += "?$queryString";
           }
           // If user is not authenticated, direct to login screen

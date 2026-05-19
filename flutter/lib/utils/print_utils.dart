@@ -1,4 +1,3 @@
-import 'dart:typed_data';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -13,7 +12,6 @@ class PrintUtils {
     final category = server.category;
     final isFranchise = category == 'فرنشايز';
     final isDistributor = category == 'موزع معتمد';
-    final isFilanto = category == 'فيلانتو';
     
     String getTitle() {
       if (category == 'جملة') return 'تأسيس جملة فلورينا';
@@ -225,7 +223,7 @@ class PrintUtils {
 
   static pw.Widget _subPoint(String text, {String? extra}) {
     return pw.Padding(
-      padding: pw.EdgeInsets.only(top: 2, right: 50),
+      padding: const pw.EdgeInsets.only(top: 2, right: 50),
       child: pw.Row(
         children: [
           pw.Text('* ', style: pw.TextStyle(fontWeight: pw.FontWeight.bold, fontSize: 20)),
@@ -260,7 +258,7 @@ class PrintUtils {
       child: pw.Text(
         text,
         style: pw.TextStyle(
-          fontWeight: pw.FontWeight.black,
+          fontWeight: pw.FontWeight.bold,
           fontSize: isHeader ? 22 : 18,
           font: !isHeader ? pw.Font.helveticaBold() : null,
         ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/server_data.dart';
 import '../utils/print_utils.dart';
-import '../utils/crypto_utils.dart';
+import 'package:aescryptojs/aescryptojs.dart';
 
 class ServerListScreen extends StatefulWidget {
   const ServerListScreen({super.key});
@@ -38,7 +38,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
       final response = await Supabase.instance.client
           .from('server_data')
           .select()
-          .order('created_at', descending: true);
+          .order('created_at', ascending: false);
       
       setState(() {
         allServers = (response as List).map((s) => ServerData.fromMap(s)).toList();
@@ -209,268 +209,131 @@ class _ServerListScreenState extends State<ServerListScreen> {
             ),
             ElevatedButton(
               onPressed: () async {
-                Future<void> saveWithValidation() async {
-                  if (branchNoController.text.isEmpty ||
-                      nameArController.text.isEmpty ||
-                      nameEnController.text.isEmpty ||
-                      usernameController.text.isEmpty ||
-                      passwordController.text.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('يرجى إدخال جميع الحقول')),
-                    );
-                    return;
-                  }
+                if (branchNoController.text.isEmpty ||
+                    nameArController.text.isEmpty ||
+                    nameEnController.text.isEmpty ||
+                    usernameController.text.isEmpty ||
+                    passwordController.text.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('يرجى إدخال جميع الحقول')),
+                  );
+                  return;
+                }
 
-                  if (nameEnController.text.length < 4) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('اسم الفرع بالإنجليزية يجب أن يكون 4 أحرف على الأقل')),
-                    );
-                    return;
-                  }
+                if (nameEnController.text.length < 4) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('اسم الفرع بالإنجليزية يجب أن يكون 4 أحرف على الأقل')),
+                  );
+                  return;
+                }
 
-                  if (printerA4Controller.text.length != 12) {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                        title: const Row(
-                          children: [
-                            Icon(Icons.warning_amber_rounded, color: Colors.amber),
-                            SizedBox(width: 8),
-                            Text('خطأ في التنسيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                          ],
-                        ),
-                        content: const Text(
-                          'يجب أن يتكون اسم طابعة A4 من 4 أحرف للفرع متبوعة بـ BIGPRIN1 (الإجمالي 12 حرف).',
-                          style: TextStyle(fontSize: 14, color: Colors.grey),
-                        ),
-                        actions: [
-                          ElevatedButton(
-                            onPressed: () => Navigator.pop(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.amber,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                            ),
-                            child: const Text('موافق', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
+                if (printerA4Controller.text.length != 12) {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                      title: const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.amber),
+                          SizedBox(width: 8),
+                          Text('خطأ في التنسيق', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
                         ],
                       ),
-                    );
+                      content: const Text(
+                        'يجب أن يتكون اسم طابعة A4 من 4 أحرف للفرع متبوعة بـ BIGPRIN1 (الإجمالي 12 حرف).',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      actions: [
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(context),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                          ),
+                          child: const Text('موافق', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  final response = await Supabase.instance.client.from('server_data').select('id, رقم_الفرع, اسم_الفرع_ar, طابعة_a4, طابعة_فواتير');
+                  final freshServers = (response as List).map((s) => ServerData.fromMap(s)).toList();
+                  
+                  final duplicate = freshServers.firstWhere(
+                    (s) => (s.printerA4 == printerA4Controller.text && printerA4Controller.text.isNotEmpty) ||
+                           (s.printerBill == printerBillController.text && printerBillController.text.isNotEmpty),
+                    orElse: () => ServerData(id: 0, branchNo: '', category: '', branchNameAr: '', branchNameEn: '', username: '', encryptedPassword: '', status: '', createdAt: DateTime.now(), serialNumber: 0),
+                  );
+
+                  if (duplicate.id != 0) {
+                    if (context.mounted) {
+                      showDialog(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                          title: const Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded, color: Colors.amber),
+                              SizedBox(width: 8),
+                              Text('تعارض في الطابعة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                            ],
+                          ),
+                          content: Text(
+                            'اسم الطابعة مستخدم مسبقاً في:\n(${duplicate.branchNo}) - ${duplicate.branchNameAr}',
+                            style: const TextStyle(fontSize: 14, color: Colors.grey),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context),
+                              child: const Text('موافق', style: TextStyle(color: Colors.grey)),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
                     return;
                   }
 
-                  bool isSubmitting = false;
-                  String? localError;
+                  final encryptedPass = encryptAESCryptoJS(passwordController.text, 'sols');
+                  await Supabase.instance.client.from('server_data').insert({
+                    'رقم_الفرع': branchNoController.text,
+                    'تصنيف_الفرع': selectedCategory,
+                    'اسم_الفرع_ar': nameArController.text,
+                    'اسم_الفرع_en': nameEnController.text.toUpperCase(),
+                    'اسم_اليوزر': usernameController.text,
+                    'باسوورد': encryptedPass,
+                    'حالة_اليوزر': selectedStatus,
+                    'serial_number': int.tryParse(serialController.text) ?? 100000,
+                    'المنطقة': selectedRegion,
+                    'اسم_الشارع': streetController.text.isEmpty ? null : streetController.text,
+                    'اسم_المدينة': cityController.text.isEmpty ? null : cityController.text,
+                    'الرقم_الضريبي': taxNoController.text.isEmpty ? null : taxNoController.text,
+                    'طابعة_a4': printerA4Controller.text,
+                    'طابعة_فواتير': printerBillController.text,
+                  });
 
-                  void saveWithValidation() async {
-                    setState(() { isSubmitting = true; localError = null; });
-                    try {
-                      final response = await Supabase.instance.client.from('server_data').select('id, رقم_الفرع, اسم_الفرع_ar, طابعة_a4, طابعة_فواتير');
-                      final freshServers = (response as List).map((s) => ServerData.fromMap(s)).toList();
-                      
-                      final duplicate = freshServers.firstWhere(
-                        (s) => (s.printerA4 == printerA4Controller.text && printerA4Controller.text.isNotEmpty) ||
-                               (s.printerBill == printerBillController.text && printerBillController.text.isNotEmpty),
-                        orElse: () => ServerData(id: '', branchNo: '', category: '', branchNameAr: '', branchNameEn: '', username: '', encryptedPassword: '', status: '', createdAt: DateTime.now(), serialNumber: 0),
-                      );
-
-                      if (duplicate.id.isNotEmpty) {
-                        setState(() { isSubmitting = false; });
-                        showDialog(
-                          context: context,
-                          builder: (context) => StatefulBuilder(
-                            builder: (context, setModalState) => AlertDialog(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                              title: const Row(
-                                children: [
-                                  Icon(Icons.info_outline_rounded, color: Colors.amber),
-                                  SizedBox(width: 8),
-                                  Text('تعارض في الطابعة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                                ],
-                              ),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (localError != null)
-                                    Container(
-                                      padding: const EdgeInsets.all(8),
-                                      margin: const EdgeInsets.bottom(12),
-                                      decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red[100]!)),
-                                      child: Text(localError!, style: const TextStyle(color: Colors.red, fontSize: 12)),
-                                    ),
-                                  Text(
-                                    'اسم الطابعة مستخدم مسبقاً في:\n(${duplicate.branchNo}) - ${duplicate.branchNameAr}',
-                                    style: const TextStyle(fontSize: 14, color: Colors.grey),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  const Text('تعديل اسم طابعة A4:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    controller: printerA4Controller,
-                                    decoration: InputDecoration(
-                                      isDense: true,
-                                      filled: true,
-                                      fillColor: Colors.grey[100],
-                                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                    ),
-                                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                              actions: [
-                                TextButton(
-                                  onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                                  child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
-                                ),
-                                ElevatedButton(
-                                  onPressed: isSubmitting ? null : () async {
-                                    setModalState(() { isSubmitting = true; localError = null; });
-                                    try {
-                                      // Recursive call would be complex here, so we inline the logic or use a proper controller
-                                      // For now, we'll trigger saveWithValidation again
-                                      Navigator.pop(context);
-                                      saveWithValidation();
-                                    } catch (e) {
-                                      setModalState(() { isSubmitting = false; localError = e.toString(); });
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                                  child: isSubmitting 
-                                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                    : const Text('تعديل وحفظ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                        return;
-                      }
-
-                      final encryptedPass = encryptAESCryptoJS(passwordController.text, 'sols');
-                      await Supabase.instance.client.from('server_data').insert({
-                        'رقم_الفرع': branchNoController.text,
-                        'تصنيف_الفرع': branchCategory,
-                        'اسم_الفرع_ar': branchNameArController.text,
-                        'اسم_الفرع_en': branchNameEnController.text.toUpperCase(),
-                        'اسم_اليوزر': usernameController.text,
-                        'باسوورد': encryptedPass,
-                  setState(() { isSubmitting = true; localError = null; });
-                  try {
-                    final response = await Supabase.instance.client.from('server_data').select('id, رقم_الفرع, اسم_الفرع_ar, طابعة_a4, طابعة_فواتير');
-                    final freshServers = (response as List).map((s) => ServerData.fromMap(s)).toList();
-                    
-                    final duplicate = freshServers.firstWhere(
-                      (s) => (s.printerA4 == printerA4Controller.text && printerA4Controller.text.isNotEmpty) ||
-                             (s.printerBill == printerBillController.text && printerBillController.text.isNotEmpty),
-                      orElse: () => ServerData(id: '', branchNo: '', category: '', branchNameAr: '', branchNameEn: '', username: '', encryptedPassword: '', status: '', createdAt: DateTime.now(), serialNumber: 0),
+                  if (context.mounted) {
+                    Navigator.pop(context); // Close the Add Server Dialog
+                    _fetchServers();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text('تم حفظ بيانات الفرع الجديد بنجاح', style: TextStyle(fontWeight: FontWeight.bold)),
+                        backgroundColor: Colors.indigo[600],
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
                     );
-
-                    if (duplicate.id.isNotEmpty) {
-                      setState(() { isSubmitting = false; });
-                      showDialog(
-                        context: context,
-                        builder: (context) => StatefulBuilder(
-                          builder: (context, setModalState) => AlertDialog(
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
-                            title: const Row(
-                              children: [
-                                Icon(Icons.info_outline_rounded, color: Colors.amber),
-                                SizedBox(width: 8),
-                                Text('تعارض في الطابعة', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-                              ],
-                            ),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (localError != null)
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    margin: const EdgeInsets.bottom(12),
-                                    decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.red[100]!)),
-                                    child: Text(localError!, style: const TextStyle(color: Colors.red, fontSize: 12)),
-                                  ),
-                                Text(
-                                  'اسم الطابعة مستخدم مسبقاً في:\n(${duplicate.branchNo}) - ${duplicate.branchNameAr}',
-                                  style: const TextStyle(fontSize: 14, color: Colors.grey),
-                                ),
-                                const SizedBox(height: 16),
-                                const Text('تعديل اسم طابعة A4:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                                const SizedBox(height: 8),
-                                TextField(
-                                  controller: printerA4Controller,
-                                  decoration: InputDecoration(
-                                    isDense: true,
-                                    filled: true,
-                                    fillColor: Colors.grey[100],
-                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                                  ),
-                                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: isSubmitting ? null : () => Navigator.pop(context),
-                                child: const Text('إلغاء', style: TextStyle(color: Colors.grey)),
-                              ),
-                              ElevatedButton(
-                                onPressed: isSubmitting ? null : () async {
-                                  Navigator.pop(context);
-                                  await saveWithValidation();
-                                },
-                                style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
-                                child: isSubmitting 
-                                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                  : const Text('تعديل وحفظ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                      return;
-                    }
-
-                    final encryptedPass = encryptAESCryptoJS(passwordController.text, 'sols');
-                    await Supabase.instance.client.from('server_data').insert({
-                      'رقم_الفرع': branchNoController.text,
-                      'تصنيف_الفرع': selectedCategory,
-                      'اسم_الفرع_ar': nameArController.text,
-                      'اسم_الفرع_en': nameEnController.text,
-                      'اسم_اليوزر': usernameController.text,
-                      'باسوورد': encryptedPass,
-                      'حالة_اليوزر': selectedStatus,
-                      'serial_number': int.tryParse(serialController.text) ?? 100000,
-                      'المنطقة': selectedRegion,
-                      'اسم_الشارع': streetController.text.isEmpty ? null : streetController.text,
-                      'اسم_المدينة': cityController.text.isEmpty ? null : cityController.text,
-                      'الرقم_الضريبي': taxNoController.text.isEmpty ? null : taxNoController.text,
-                      'طابعة_a4': printerA4Controller.text,
-                      'طابعة_فواتير': printerBillController.text,
-                    });
-
-                    if (context.mounted) {
-                      Navigator.pop(context); // Close the Add Server Dialog
-                      _fetchServers();
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: const Text('تم حفظ بيانات الفرع الجديد بنجاح', style: TextStyle(fontWeight: FontWeight.bold)),
-                          backgroundColor: Colors.indigo[600],
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('حدث خطأ أثناء الحفظ: $e')),
-                      );
-                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('حدث خطأ أثناء الحفظ: $e')),
+                    );
                   }
                 }
-                await saveWithValidation();
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.indigo, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
               child: const Text('إضافة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
