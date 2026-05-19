@@ -67,7 +67,12 @@ export default function AddServerPage() {
     else if (branchCategory === 'الإدارة') startNum = 1;
 
     const categoryNumbers = allRecords
-      .filter(r => r.تصنيف_الفرع === branchCategory)
+      .filter(r => {
+        if (branchCategory === 'فلورينا' || branchCategory === 'جملة') {
+          return r.تصنيف_الفرع === 'فلورينا' || r.تصنيف_الفرع === 'جملة';
+        }
+        return r.تصنيف_الفرع === branchCategory;
+      })
       .map(r => {
         const numStr = String(r.رقم_الفرع).replace(/\D/g, '');
         return parseInt(numStr, 10);
