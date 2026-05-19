@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import { useRouter } from 'next/navigation';
 import CryptoJS from 'crypto-js';
-import { AlertCircle, Save, ArrowRight, Building2, MapPin, Hash, Key, User, ToggleLeft, Globe, Map, CreditCard, ShieldCheck } from 'lucide-react';
+import { AlertCircle, Save, ArrowRight, Building2, MapPin, Hash, Key, User, ToggleLeft, Globe, Map, CreditCard, ShieldCheck, Printer } from 'lucide-react';
 
 function getRequiredFields(category: string): { street: boolean; city: boolean; taxNo: boolean } {
   if (category === 'فرنشايز' || category === 'فيلانتو') {
@@ -64,6 +64,7 @@ export default function AddServerPage() {
     else if (branchCategory === 'فرنشايز') startNum = 500;
     else if (branchCategory === 'موزع معتمد') startNum = 600;
     else if (branchCategory === 'فيلانتو') startNum = 900;
+    else if (branchCategory === 'الإدارة') startNum = 1;
 
     const categoryNumbers = allRecords
       .filter(r => r.تصنيف_الفرع === branchCategory)
@@ -79,7 +80,7 @@ export default function AddServerPage() {
     }
 
     const hasBR = allRecords.some(r => r.رقم_الفرع.startsWith('BR'));
-    let formattedNo = hasBR ? `BR${String(nextNum).padStart(3, '0')}` : String(nextNum);
+    let formattedNo = branchCategory === 'الإدارة' ? `h-${nextNum}` : (hasBR ? `BR${String(nextNum).padStart(3, '0')}` : String(nextNum));
     setBranchNo(formattedNo);
 
     let nextSerial = 100000;
@@ -95,15 +96,15 @@ export default function AddServerPage() {
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    const a4Printer = manualA4 || `${branchNameEn.slice(0, 4)}BIGPRIN1`;
-    const billPrinter = manualBill || `${branchNameEn.slice(0, 4)}SPRI`;
+    const a4Printer = branchCategory === 'الإدارة' ? null : (manualA4 || `${branchNameEn.slice(0, 4)}BIGPRIN1`);
+    const billPrinter = branchCategory === 'الإدارة' ? null : (manualBill || `${branchNameEn.slice(0, 4)}SPRI`);
 
-    if (branchNameEn.length < 4) {
+    if (branchCategory !== 'الإدارة' && branchNameEn.length < 4) {
       setError('يجب أن يكون اسم الفرع بالإنجليزية 4 أحرف على الأقل.');
       return;
     }
 
-    if (a4Printer.length !== 12) {
+    if (branchCategory !== 'الإدارة' && a4Printer && a4Printer.length !== 12) {
       setValidationError('يجب أن يتكون اسم طابعة A4 من 4 أحرف للفرع متبوعة بـ BIGPRIN1 (الإجمالي 12 حرف).');
       return;
     }
@@ -122,13 +123,15 @@ export default function AddServerPage() {
 
       if (freshRecords) {
         setAllRecords(freshRecords);
-        const duplicate = freshRecords.find((r: any) => r.طابعة_a4 === a4Printer || r.طابعة_فواتير === billPrinter);
-        if (duplicate) {
-          setConflictRecord(duplicate);
-          setManualA4(a4Printer);
-          setManualBill(billPrinter);
-          setLoading(false);
-          return;
+        if (branchCategory !== 'الإدارة') {
+          const duplicate = freshRecords.find((r: any) => r.طابعة_a4 === a4Printer || r.طابعة_فواتير === billPrinter);
+          if (duplicate) {
+            setConflictRecord(duplicate);
+            setManualA4(a4Printer || '');
+            setManualBill(billPrinter || '');
+            setLoading(false);
+            return;
+          }
         }
       }
 
@@ -148,9 +151,9 @@ export default function AddServerPage() {
             طابعة_فواتير: billPrinter,
             اسم_الشارع: streetName || null,
             اسم_المدينة: cityName || null,
-            الرقم_الضريبي: taxNo || null,
+            الرقم_الضريبي: branchCategory === 'الإدارة' ? null : taxNo || null,
             المنطقة: region || null,
-            serial_number: serialNumber,
+            serial_number: branchCategory === 'الإدارة' ? null : serialNumber,
           }
         ]);
 
@@ -266,8 +269,8 @@ export default function AddServerPage() {
               
               <div className="lg:col-span-3">
                 <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">تصنيف الفرع</label>
-                <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                  {['فلورينا', 'فرنشايز', 'جملة', 'موزع معتمد', 'اسكتشر', 'فيلانتو'].map(cat => (
+                <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
+                  {['فلورينا', 'فرنشايز', 'جملة', 'موزع معتمد', 'اسكتشر', 'فيلانتو', 'الإدارة'].map(cat => (
                     <button
                       key={cat}
                       type="button"
@@ -322,11 +325,6 @@ export default function AddServerPage() {
                 </label>
                 <div className="relative">
                   <input type="text" required placeholder="مثال: OLAYA" className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100 uppercase font-mono tracking-wider" value={branchNameEn} onChange={(e) => setBranchNameEn(e.target.value.toUpperCase())} dir="ltr" />
-                  {branchNameEn.length >= 4 && (
-                    <div className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-gray-400 bg-gray-100 dark:bg-slate-700 px-1.5 py-0.5 rounded-sm">
-                      {branchNameEn.slice(0, 4)}BIGPRIN1
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -351,41 +349,57 @@ export default function AddServerPage() {
                   <input type="text" required placeholder="Password" className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100 font-mono tracking-widest" value={password} onChange={(e) => setPassword(e.target.value)} dir="ltr" />
                   <p className="text-[10px] text-gray-500 dark:text-slate-400 mt-1 font-medium">سيتم التشفير قبل الحفظ</p>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
-                    <Hash className="w-3.5 h-3.5 text-gray-400" /> التسلسل (Serial)
-                  </label>
-                  <input type="number" className="w-full px-2.5 py-1.5 bg-gray-100 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none font-mono text-gray-500 cursor-not-allowed" value={serialNumber} readOnly />
-                </div>
+                {branchCategory !== 'الإدارة' && (
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+                      <Hash className="w-3.5 h-3.5 text-gray-400" /> التسلسل (Serial)
+                    </label>
+                    <input type="number" className="w-full px-2.5 py-1.5 bg-gray-100 dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none font-mono text-gray-500 cursor-not-allowed" value={serialNumber} readOnly />
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="border-t border-gray-100 dark:border-slate-700/60 pt-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-3 gap-2">
-                <h2 className="text-sm font-extrabold text-gray-800 dark:text-slate-200 flex items-center gap-1.5">
-                  <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  البيانات الإضافية والموقع
-                </h2>
-                {renderRequirementBadge()}
-              </div>
+            {branchCategory !== 'الإدارة' && (
+              <div className="border-t border-gray-100 dark:border-slate-700/60 pt-4">
+                <div className="flex flex-col md:flex-row md:items-center justify-between mb-3 gap-2">
+                  <h2 className="text-sm font-extrabold text-gray-800 dark:text-slate-200 flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                    البيانات الإضافية والموقع
+                  </h2>
+                  {renderRequirementBadge()}
+                </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className={!requiredFields.street && !requiredFields.city ? 'opacity-50' : ''}>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم الشارع</label>
-                  <input type="text" required={requiredFields.street} placeholder={requiredFields.street ? 'مثال: طريق الملك فهد' : 'غير مطلوب'} className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100" value={streetName} onChange={(e) => setStreetName(e.target.value)} disabled={!requiredFields.street && !requiredFields.city} />
-                </div>
-                <div className={!requiredFields.street && !requiredFields.city ? 'opacity-50' : ''}>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم المدينة</label>
-                  <input type="text" required={requiredFields.city} placeholder={requiredFields.city ? 'مثال: الرياض' : 'غير مطلوب'} className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100" value={cityName} onChange={(e) => setCityName(e.target.value)} disabled={!requiredFields.street && !requiredFields.city} />
-                </div>
-                <div className={!requiredFields.taxNo ? 'opacity-50' : ''}>
-                  <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
-                    <CreditCard className="w-3.5 h-3.5 text-gray-400" /> الرقم الضريبي
-                  </label>
-                  <input type="text" required={requiredFields.taxNo} placeholder={requiredFields.taxNo ? 'مثال: 300000000000003' : 'غير مطلوب'} className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100 font-mono tracking-wider" value={taxNo} onChange={(e) => setTaxNo(e.target.value)} disabled={!requiredFields.taxNo} dir="ltr" />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className={!requiredFields.street && !requiredFields.city ? 'opacity-50' : ''}>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم الشارع</label>
+                    <input type="text" required={requiredFields.street} placeholder={requiredFields.street ? 'مثال: طريق الملك فهد' : 'غير مطلوب'} className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100" value={streetName} onChange={(e) => setStreetName(e.target.value)} disabled={!requiredFields.street && !requiredFields.city} />
+                  </div>
+                  <div className={!requiredFields.street && !requiredFields.city ? 'opacity-50' : ''}>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم المدينة</label>
+                    <input type="text" required={requiredFields.city} placeholder={requiredFields.city ? 'مثال: الرياض' : 'غير مطلوب'} className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100" value={cityName} onChange={(e) => setCityName(e.target.value)} disabled={!requiredFields.street && !requiredFields.city} />
+                  </div>
+                  <div className={!requiredFields.taxNo ? 'opacity-50' : ''}>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+                      <CreditCard className="w-3.5 h-3.5 text-gray-400" /> الرقم الضريبي
+                    </label>
+                    <input type="text" required={requiredFields.taxNo} placeholder={requiredFields.taxNo ? 'مثال: 300000000000003' : 'غير مطلوب'} className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100 font-mono tracking-wider" value={taxNo} onChange={(e) => setTaxNo(e.target.value)} disabled={!requiredFields.taxNo} dir="ltr" />
+                  </div>
+                  <div className="lg:col-span-1 md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+                      <Printer className="w-3.5 h-3.5 text-gray-400" /> طابعة A4
+                    </label>
+                    <input type="text" placeholder="يتم التوليد تلقائياً إن تُرك فارغاً" className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100 font-mono tracking-wider" value={manualA4} onChange={(e) => setManualA4(e.target.value.toUpperCase())} dir="ltr" />
+                  </div>
+                  <div className="lg:col-span-2 md:col-span-2">
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1">
+                      <Printer className="w-3.5 h-3.5 text-gray-400" /> طابعة الفواتير
+                    </label>
+                    <input type="text" placeholder="يتم التوليد تلقائياً إن تُرك فارغاً" className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 dark:text-slate-100 font-mono tracking-wider" value={manualBill} onChange={(e) => setManualBill(e.target.value.toUpperCase())} dir="ltr" />
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             <div className="pt-5 border-t border-gray-100 dark:border-slate-700/60 flex justify-end">
               <button type="submit" disabled={loading} className="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-2 px-8 rounded-sm shadow-md transition-colors flex justify-center items-center gap-2 text-sm">

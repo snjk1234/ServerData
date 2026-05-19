@@ -12,7 +12,7 @@ export default function AdminHeader({ user }: { user: any }) {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  
+
   // Dummy notifications state
   const [notifications, setNotifications] = useState([
     { id: 1, text: 'تم تسجيل دخول مشرف جديد', time: 'منذ 5 دقائق', read: false },
@@ -64,21 +64,23 @@ export default function AdminHeader({ user }: { user: any }) {
   return (
     <header className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-gray-150 dark:border-slate-850 sticky top-0 z-40 px-4 py-2 shadow-sm transition-colors duration-300" dir="rtl">
       <div className="w-full mx-auto flex justify-between items-center">
-        {/* Logo / System Title */}
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-sm bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-sm">
-            DB
+        {/* Logo / System Title and Navigation */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-sm bg-indigo-600 flex items-center justify-center text-white font-black text-xs shadow-sm">
+              DB
+            </div>
+            <span className="text-sm font-extrabold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
+              لوحة الإدارة
+            </span>
           </div>
-          <span className="text-sm font-extrabold bg-gradient-to-r from-indigo-600 to-violet-600 dark:from-indigo-400 dark:to-violet-400 bg-clip-text text-transparent">
-            لوحة إدارة السيرفرات
-          </span>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1.5">
           {/* Notifications */}
           <div className="relative">
-            <button 
+            <button
               onClick={() => setShowNotifications(!showNotifications)}
               className="p-1.5 rounded-sm bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 transition-all shadow-sm relative border border-gray-200 dark:border-slate-700/50"
               title="الإشعارات"
@@ -98,7 +100,7 @@ export default function AdminHeader({ user }: { user: any }) {
                   <h4 className="text-xs font-bold text-gray-900 dark:text-slate-100">الإشعارات</h4>
                   {notifications.length > 0 && (
                     <div className="flex gap-2">
-                      <button 
+                      <button
                         onClick={markAllAsRead}
                         className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
                         title="تحديد الكل كمقروء"
@@ -106,7 +108,7 @@ export default function AdminHeader({ user }: { user: any }) {
                         <Check className="w-3 h-3" />
                         الكل مقروء
                       </button>
-                      <button 
+                      <button
                         onClick={clearNotifications}
                         className="text-[10px] text-red-600 dark:text-red-400 hover:underline flex items-center gap-0.5"
                         title="حذف الكل"
@@ -124,8 +126,8 @@ export default function AdminHeader({ user }: { user: any }) {
                   ) : (
                     <div className="divide-y divide-gray-100 dark:divide-slate-700">
                       {notifications.map(notif => (
-                        <div 
-                          key={notif.id} 
+                        <div
+                          key={notif.id}
                           onClick={() => toggleRead(notif.id)}
                           className={`p-3 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors flex flex-col gap-0.5 cursor-pointer ${!notif.read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
                         >
@@ -146,7 +148,7 @@ export default function AdminHeader({ user }: { user: any }) {
           </div>
 
           {/* Dark Mode Toggle */}
-          <button 
+          <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="p-1.5 rounded-sm bg-gray-100 dark:bg-slate-800 hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-200 transition-all shadow-sm border border-gray-200 dark:border-slate-700/50"
             title={theme === 'dark' ? 'الوضع الفاتح' : 'الوضع الداكن'}

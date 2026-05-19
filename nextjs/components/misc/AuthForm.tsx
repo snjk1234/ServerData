@@ -441,14 +441,14 @@ export function AuthForm({ state }: { state: AuthState }) {
                   className="w-full bg-white/5 border-white/20 text-white rounded-lg hover:bg-white/10 hover:text-white transition-all text-xs font-bold h-11 backdrop-blur-sm"
                   onClick={() => api.oauthSignin('google')}
                 >
-                  <SiGoogle className="h-4 w-4 ml-2" /> جوجل
+                  <SiGoogle className="h-4 w-4 ml-2" /> Google
                 </Button>
                 <Button
                   variant="outline"
                   className="w-full bg-white/5 border-white/20 text-white rounded-lg hover:bg-white/10 hover:text-white transition-all text-xs font-bold h-11 backdrop-blur-sm"
                   onClick={() => api.oauthSignin('github')}
                 >
-                  <SiGithub className="h-4 w-4 ml-2" /> جيتهاب
+                  <SiGithub className="h-4 w-4 ml-2" /> GitHup
                 </Button>
               </div>
             </>

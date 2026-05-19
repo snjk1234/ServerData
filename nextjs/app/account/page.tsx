@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
-import { Eye, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle } from 'lucide-react';
+import { Eye, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users } from 'lucide-react';
 import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
 
 const categories = [
@@ -14,7 +14,8 @@ const categories = [
   { id: 'جملة', name: 'جملة' },
   { id: 'موزع معتمد', name: 'موزع معتمد' },
   { id: 'اسكتشر', name: 'اسكتشر' },
-  { id: 'فيلانتو', name: 'فيلانتو' }
+  { id: 'فيلانتو', name: 'فيلانتو' },
+  { id: 'الإدارة', name: 'الإدارة' }
 ];
 
 const categoryThemes: Record<string, {
@@ -88,6 +89,15 @@ const categoryThemes: Record<string, {
     textActive: 'text-rose-600 dark:text-rose-400',
     iconBg: 'bg-rose-100 dark:bg-rose-950/50',
     iconColor: 'text-rose-600 dark:text-rose-400'
+  },
+  'الإدارة': {
+    activeBg: 'bg-slate-800 dark:bg-slate-700 text-white shadow-lg shadow-slate-500/20 dark:shadow-none',
+    badgeActive: 'bg-slate-900/50 text-slate-100',
+    badgeInactive: 'bg-slate-100 dark:bg-slate-900/40 text-slate-700 dark:text-slate-400',
+    borderHover: 'hover:border-slate-500 hover:bg-slate-50/30 dark:hover:bg-slate-800/30',
+    textActive: 'text-slate-800 dark:text-slate-300',
+    iconBg: 'bg-slate-200 dark:bg-slate-800/50',
+    iconColor: 'text-slate-700 dark:text-slate-400'
   }
 };
 
@@ -100,6 +110,7 @@ const renderCategoryIcon = (id: string, className = "w-5 h-5") => {
     case 'موزع معتمد': return <ShieldCheck className={className} />;
     case 'اسكتشر': return <Footprints className={className} />;
     case 'فيلانتو': return <Sparkles className={className} />;
+    case 'الإدارة': return <Users className={className} />;
     default: return <Store className={className} />;
   }
 };
@@ -503,8 +514,8 @@ export default function AccountServersTable() {
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id === 'all' ? null : cat.id)}
                       className={`group flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-sm border text-base font-bold transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 lg:w-full hover:scale-[1.02] active:scale-[0.98] ${isActive
-                          ? theme.activeBg + ' border-transparent text-white shadow-md'
-                          : 'border-gray-200 dark:border-slate-700/60 text-gray-700 dark:text-slate-300 bg-gray-50/50 dark:bg-slate-900/10'
+                        ? theme.activeBg + ' border-transparent text-white shadow-md'
+                        : 'border-gray-200 dark:border-slate-700/60 text-gray-700 dark:text-slate-300 bg-gray-50/50 dark:bg-slate-900/10'
                         }`}
                     >
                       <div className="flex items-center gap-2">
@@ -697,11 +708,19 @@ export default function AccountServersTable() {
                     <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">رقم الفرع</th>
                     <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الاسم (AR)</th>
                     <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">التصنيف والمنطقة</th>
-                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">العنوان والضريبة</th>
+                    {activeCategory !== 'الإدارة' && (
+                      <>
+                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">العنوان والضريبة</th>
+                      </>
+                    )}
                     <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اليوزر</th>
-                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اسم الطابعة</th>
+                    {activeCategory !== 'الإدارة' && (
+                      <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اسم الطابعة</th>
+                    )}
                     <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الباسوورد</th>
-                    <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">التسلسل</th>
+                    {activeCategory !== 'الإدارة' && (
+                      <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">التسلسل</th>
+                    )}
                     <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الحالة</th>
                     <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الخيارات</th>
                   </tr>
@@ -713,7 +732,6 @@ export default function AccountServersTable() {
                         row.حالة_اليوزر === 'مغلق نهائياً' ? 'border-r-2 border-r-red-500' :
                           row.حالة_اليوزر === 'الافتتاح قريبا' ? 'border-r-2 border-r-blue-500' :
                             'border-r-2 border-r-yellow-500';
-
                     const rowBgClass =
                       row.تصنيف_الفرع === 'فلورينا' ? 'bg-sky-100/40 dark:bg-sky-950/20' :
                         row.تصنيف_الفرع === 'فرنشايز' ? 'bg-purple-100/40 dark:bg-purple-950/20' :
@@ -730,7 +748,8 @@ export default function AccountServersTable() {
                             row.تصنيف_الفرع === 'موزع معتمد' ? 'border-emerald-200 dark:border-emerald-900/60' :
                               row.تصنيف_الفرع === 'اسكتشر' ? 'border-indigo-200 dark:border-indigo-900/60' :
                                 row.تصنيف_الفرع === 'فيلانتو' ? 'border-rose-200 dark:border-rose-900/60' :
-                                  'border-gray-200 dark:border-slate-700/60';
+                                  row.تصنيف_الفرع === 'الإدارة' ? 'border-slate-300 dark:border-slate-700' :
+                                    'border-gray-200 dark:border-slate-700/60';
 
                     return (
                       <tr key={row.id} className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass}`}>
@@ -747,29 +766,33 @@ export default function AccountServersTable() {
                             <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">{row.المنطقة || '—'}</span>
                           </div>
                         </td>
-                        <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
-                          <div className="flex flex-col gap-0.5">
-                            <div className="text-xs text-gray-600 dark:text-slate-400">
-                              {row.اسم_المدينة || row.اسم_الشارع ? (
-                                <>
-                                  {row.اسم_المدينة} {row.اسم_الشارع && ` - ${row.اسم_الشارع}`}
-                                </>
-                              ) : '—'}
-                            </div>
-                            {row.الرقم_الضريبي && (
-                              <div className="text-[11px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.25 rounded-sm w-fit text-gray-500 font-semibold">
-                                ضريبي: {row.الرقم_الضريبي}
+                        {activeCategory !== 'الإدارة' && (
+                          <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                            <div className="flex flex-col gap-0.5">
+                              <div className="text-xs text-gray-600 dark:text-slate-400">
+                                {row.اسم_المدينة || row.اسم_الشارع ? (
+                                  <>
+                                    {row.اسم_المدينة} {row.اسم_الشارع && ` - ${row.اسم_الشارع}`}
+                                  </>
+                                ) : '—'}
                               </div>
-                            )}
-                          </div>
-                        </td>
+                              {row.الرقم_الضريبي && (
+                                <div className="text-[11px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.25 rounded-sm w-fit text-gray-500 font-semibold">
+                                  ضريبي: {row.الرقم_الضريبي}
+                                </div>
+                              )}
+                            </div>
+                          </td>
+                        )}
                         <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.اسم_اليوزر}</td>
-                        <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/60">
-                          <div className="flex flex-col gap-0.5 text-xs">
-                            <span className="font-semibold text-indigo-600 dark:text-indigo-400 font-mono">A4: {row.طابعة_a4 || '—'}</span>
-                            <span className="text-gray-500 dark:text-slate-400 font-mono">فاتورة: {row.طابعة_فواتير || '—'}</span>
-                          </div>
-                        </td>
+                        {activeCategory !== 'الإدارة' && (
+                          <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/60">
+                            <div className="flex flex-col gap-0.5 text-xs">
+                              <span className="font-semibold text-indigo-600 dark:text-indigo-400 font-mono">A4: {row.طابعة_a4 || '—'}</span>
+                              <span className="text-gray-500 dark:text-slate-400 font-mono">فاتورة: {row.طابعة_فواتير || '—'}</span>
+                            </div>
+                          </td>
+                        )}
                         <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
                           {decryptedPasswords[row.id] ? (
                             <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
@@ -924,7 +947,7 @@ export default function AccountServersTable() {
               </div>
               <h3 className="text-sm font-extrabold text-indigo-800 dark:text-indigo-400">الصلاحية مطلوبة</h3>
             </div>
-            
+
             <div className="px-4 pb-4">
               <p className="mb-4 text-xs text-gray-600 dark:text-slate-300 leading-relaxed font-medium">
                 يرجى إدخال كلمة المرور الخاصة بالمشرف لفك تشفير وعرض الباسوورد.
@@ -987,7 +1010,7 @@ export default function AccountServersTable() {
             <div className="overflow-y-auto p-4 custom-scrollbar">
               <form onSubmit={handleUpdate} className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  
+
                   {/* Row 1 */}
                   <div>
                     <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">تصنيف الفرع</label>
@@ -1002,6 +1025,7 @@ export default function AccountServersTable() {
                       <option value="موزع معتمد">موزع معتمد</option>
                       <option value="اسكتشر">اسكتشر</option>
                       <option value="فيلانتو">فيلانتو</option>
+                      <option value="الإدارة">الإدارة</option>
                     </select>
                   </div>
                   <div>
@@ -1096,67 +1120,73 @@ export default function AccountServersTable() {
                         dir="ltr"
                       />
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">التسلسل</label>
-                      <input
-                        type="number"
-                        className="w-full px-2.5 py-1.5 bg-gray-100 dark:bg-slate-900 text-gray-500 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none font-mono text-left"
-                        value={editForm.serial_number || ''}
-                        onChange={(e) => setEditForm({ ...editForm, serial_number: parseInt(e.target.value) })}
-                        dir="ltr"
-                      />
-                    </div>
+                    {editForm.تصنيف_الفرع !== 'الإدارة' && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">التسلسل</label>
+                        <input
+                          type="number"
+                          className="w-full px-2.5 py-1.5 bg-gray-100 dark:bg-slate-900 text-gray-500 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none font-mono text-left"
+                          value={editForm.serial_number || ''}
+                          onChange={(e) => setEditForm({ ...editForm, serial_number: parseInt(e.target.value) })}
+                          dir="ltr"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Optional Data */}
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">الرقم الضريبي</label>
-                    <input
-                      type="text"
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
-                      value={editForm.الرقم_الضريبي}
-                      onChange={(e) => setEditForm({ ...editForm, الرقم_الضريبي: e.target.value })}
-                      dir="ltr"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم المدينة</label>
-                    <input
-                      type="text"
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      value={editForm.اسم_المدينة}
-                      onChange={(e) => setEditForm({ ...editForm, اسم_المدينة: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم الشارع</label>
-                    <input
-                      type="text"
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                      value={editForm.اسم_الشارع}
-                      onChange={(e) => setEditForm({ ...editForm, اسم_الشارع: e.target.value })}
-                    />
-                  </div>
-                  <div className="lg:col-span-1 md:col-span-2">
-                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">طابعة A4</label>
-                    <input
-                      type="text"
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
-                      value={editForm.طابعة_a4}
-                      onChange={(e) => setEditForm({ ...editForm, طابعة_a4: e.target.value })}
-                      dir="ltr"
-                    />
-                  </div>
-                  <div className="lg:col-span-2 md:col-span-2">
-                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">طابعة الفواتير</label>
-                    <input
-                      type="text"
-                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
-                      value={editForm.طابعة_فواتير}
-                      onChange={(e) => setEditForm({ ...editForm, طابعة_فواتير: e.target.value })}
-                      dir="ltr"
-                    />
-                  </div>
+                  {editForm.تصنيف_الفرع !== 'الإدارة' && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">الرقم الضريبي</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                          value={editForm.الرقم_الضريبي || ''}
+                          onChange={(e) => setEditForm({ ...editForm, الرقم_الضريبي: e.target.value })}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم المدينة</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          value={editForm.اسم_المدينة || ''}
+                          onChange={(e) => setEditForm({ ...editForm, اسم_المدينة: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اسم الشارع</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          value={editForm.اسم_الشارع || ''}
+                          onChange={(e) => setEditForm({ ...editForm, اسم_الشارع: e.target.value })}
+                        />
+                      </div>
+                      <div className="lg:col-span-1 md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">طابعة A4</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
+                          value={editForm.طابعة_a4 || ''}
+                          onChange={(e) => setEditForm({ ...editForm, طابعة_a4: e.target.value })}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div className="lg:col-span-2 md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">طابعة الفواتير</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
+                          value={editForm.طابعة_فواتير || ''}
+                          onChange={(e) => setEditForm({ ...editForm, طابعة_فواتير: e.target.value })}
+                          dir="ltr"
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-slate-700 mt-4 shrink-0">
@@ -1187,8 +1217,8 @@ export default function AccountServersTable() {
       {toast && (
         <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
           <div className={`px-4 py-2.5 rounded-sm shadow-xl flex items-center gap-2.5 border ${toast.type === 'success'
-              ? 'bg-green-50 dark:bg-green-950/80 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
-              : 'bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
+            ? 'bg-green-50 dark:bg-green-950/80 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
+            : 'bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
             }`}>
             {toast.type === 'success' ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
             <span className="font-bold text-xs">{toast.message}</span>
