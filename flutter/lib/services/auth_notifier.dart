@@ -12,17 +12,15 @@ part 'auth_notifier.g.dart';
 
 @Riverpod(keepAlive: true)
 class Auth extends _$Auth {
-  final StreamController<supa.Session?> authStateController =
-      StreamController.broadcast();
-  bool cancelled = false;
-
   Auth();
 
   @override
-  Stream<Session?> build() {
-    final streamSub = client.auth.onAuthStateChange.listen((authState) async {
+  Stream<supa.Session?> build() async* {
+    // Emit the current session immediately so it isn't lost before the stream listener attaches
+    yield client.auth.currentSession;
+
+    await for (final authState in client.auth.onAuthStateChange) {
       final session = authState.session;
-      authStateController.add(session);
 
       // capture posthog events for analytics
       if (session != null) {
@@ -33,13 +31,9 @@ class Auth extends _$Auth {
       } else {
         await Posthog().reset();
       }
-    });
 
-    ref.onDispose(() {
-      streamSub.cancel();
-      authStateController.close();
-    });
-    return authStateController.stream;
+      yield session;
+    }
   }
 
   supa.SupabaseClient get client => supa.Supabase.instance.client;

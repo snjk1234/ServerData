@@ -654,9 +654,11 @@ export default function AccountServersTable() {
   const filteredData = data.filter(r => {
     // تصفية أمنية للمستخدم العادي لمنعه من رؤية فروع غير مسموح له بها حتى لو كان التبويب "الكل" نشطاً
     if (!isAdmin) {
+      if (!currentUser) return false; // عدم إظهار البيانات إذا لم تكتمل بيانات المستخدم
       const allowed = currentUser?.allowed_categories || [];
       const hasAll = allowed.includes('الكل') || allowed.includes('all');
-      if (!hasAll && !allowed.includes(r.تصنيف_الفرع)) {
+      const branchCategory = r.تصنيف_الفرع || 'فلورينا'; // الافتراضي إذا كان التصنيف فارغاً
+      if (!hasAll && !allowed.includes(branchCategory)) {
         return false;
       }
     }
