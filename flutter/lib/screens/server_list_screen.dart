@@ -4,14 +4,18 @@ import '../models/server_data.dart';
 import '../utils/print_utils.dart';
 import 'package:aescryptojs/aescryptojs.dart';
 
-class ServerListScreen extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/server_notifier.dart';
+import '../services/metadata_notifier.dart';
+
+class ServerListScreen extends ConsumerStatefulWidget {
   const ServerListScreen({super.key});
 
   @override
-  State<ServerListScreen> createState() => _ServerListScreenState();
+  ConsumerState<ServerListScreen> createState() => _ServerListScreenState();
 }
 
-class _ServerListScreenState extends State<ServerListScreen> {
+class _ServerListScreenState extends ConsumerState<ServerListScreen> {
   final List<String> _regions = [
     '1-المدينة المنورة',
     '1-المنطقة الوسطى',
@@ -24,31 +28,8 @@ class _ServerListScreenState extends State<ServerListScreen> {
     '5-الطائف'
   ];
 
-  List<ServerData> allServers = [];
-  bool isLoading = true;
+  static const adminKey = String.fromEnvironment('ADMIN_KEY', defaultValue: 'sols');
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchServers();
-  }
-
-  Future<void> _fetchServers() async {
-    try {
-      final response = await Supabase.instance.client
-          .from('server_data')
-          .select()
-          .order('created_at', ascending: false);
-      
-      setState(() {
-        allServers = (response as List).map((s) => ServerData.fromMap(s)).toList();
-        isLoading = false;
-      });
-    } catch (e) {
-      print('Error fetching servers: $e');
-      setState(() => isLoading = false);
-    }
-  }
 
   Map<String, bool> _getRequiredFields(String category) {
     if (category == 'فرنشايز' || category == 'فيلانتو') {
@@ -297,7 +278,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
                     return;
                   }
 
-                  final encryptedPass = encryptAESCryptoJS(passwordController.text, 'sols');
+                  final encryptedPass = encryptAESCryptoJS(passwordController.text, adminKey);
                   await Supabase.instance.client.from('server_data').insert({
                     'رقم_الفرع': branchNoController.text,
                     'تصنيف_الفرع': selectedCategory,
@@ -317,7 +298,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
 
                   if (context.mounted) {
                     Navigator.pop(context); // Close the Add Server Dialog
-                    _fetchServers();
+                    ref.read(serverDataNotifierProvider.notifier).refreshServers();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('تم حفظ بيانات الفرع الجديد بنجاح', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -346,58 +327,80 @@ class _ServerListScreenState extends State<ServerListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final metadataAsync = ref.watch(metadataProvider);
+    final serversAsync = ref.watch(serverDataNotifierProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('إدارة الفروع والسيرفرات', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.indigo,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(onPressed: _fetchServers, icon: const Icon(Icons.refresh)),
+          IconButton(onPressed: () => ref.read(serverDataNotifierProvider.notifier).refreshServers(), icon: const Icon(Icons.refresh)),
           IconButton(onPressed: _showAddServerDialog, icon: const Icon(Icons.add_circle_outline)),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              itemCount: allServers.length,
-              itemBuilder: (context, index) {
-                final server = allServers[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.indigo[100],
-                      child: Text(server.branchNo, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+      body: metadataAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, st) => Center(child: Text('خطأ في جلب بيانات المستخدم: $e')),
+        data: (metadata) {
+          if (metadata?.role != 'admin') {
+            return const Center(
+              child: Text(
+                'ليس لديك صلاحية للوصول إلى هذه الصفحة',
+                style: TextStyle(fontSize: 18, color: Colors.red, fontWeight: FontWeight.bold),
+              ),
+            );
+          }
+          return serversAsync.when(
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, st) => Center(child: Text('خطأ في جلب السيرفرات: $e')),
+            data: (allServers) => RefreshIndicator(
+              onRefresh: () => ref.read(serverDataNotifierProvider.notifier).refreshServers(),
+              child: ListView.builder(
+                itemCount: allServers.length,
+                itemBuilder: (context, index) {
+                  final server = allServers[index];
+                  return Card(
+                    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    child: ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: Colors.indigo[100],
+                        child: Text(server.branchNo, style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
+                      title: Text(server.branchNameAr, style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('${server.category} - ${server.status}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.print, color: Colors.blue),
+                            onPressed: () {
+                              final supported = ['فرنشايز', 'فيلانتو', 'فلورينا', 'جملة', 'اسكتشر', 'موزع معتمد'];
+                              if (supported.contains(server.category)) {
+                                PrintUtils.printBranchFoundation(server);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('سيتم تزويد بيانات الطباعة لهذا التصنيف لاحقاً')),
+                                );
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_outline, color: Colors.red),
+                            onPressed: () => _showDeleteConfirmation(server),
+                          ),
+                        ],
+                      ),
                     ),
-                    title: Text(server.branchNameAr, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('${server.category} - ${server.status}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.print, color: Colors.blue),
-                          onPressed: () {
-                            final supported = ['فرنشايز', 'فيلانتو', 'فلورينا', 'جملة', 'اسكتشر', 'موزع معتمد'];
-                            if (supported.contains(server.category)) {
-                              PrintUtils.printBranchFoundation(server);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('سيتم تزويد بيانات الطباعة لهذا التصنيف لاحقاً')),
-                              );
-                            }
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_outline, color: Colors.red),
-                          onPressed: () => _showDeleteConfirmation(server),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
+          );
+        },
+      ),
     );
   }
 
@@ -450,7 +453,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               onPressed: () async {
-                if (passwordController.text != 'sols') {
+                if (passwordController.text != adminKey) {
                   setDialogState(() => errorMsg = 'كلمة المرور غير صحيحة');
                   return;
                 }
@@ -461,7 +464,7 @@ class _ServerListScreenState extends State<ServerListScreen> {
                       .eq('id', server.id);
                   if (context.mounted) {
                     Navigator.pop(context);
-                    _fetchServers();
+                    ref.read(serverDataNotifierProvider.notifier).refreshServers();
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('تم حذف الفرع بنجاح', style: TextStyle(fontWeight: FontWeight.bold)),

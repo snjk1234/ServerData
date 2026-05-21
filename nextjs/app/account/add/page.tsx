@@ -53,7 +53,26 @@ export default function AddServerPage() {
       const { data } = await (supabase as any).from('server_data').select('رقم_الفرع, اسم_الفرع_ar, تصنيف_الفرع, serial_number, طابعة_a4, طابعة_فواتير');
       if (data) setAllRecords(data);
     };
+
+    const checkAdmin = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/login');
+        return;
+      }
+      const { data: profile } = await (supabase as any)
+        .from('users')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+      
+      if (!profile || profile.role !== 'admin') {
+        router.push('/account');
+      }
+    };
+
     fetchExisting();
+    checkAdmin();
   }, []);
 
   useEffect(() => {
