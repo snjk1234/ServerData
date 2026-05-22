@@ -754,14 +754,14 @@ export default function AccountServersTable() {
         <div className="flex flex-col lg:flex-row gap-3 items-start">
 
           {/* القائمة الجانبية للتصنيفات ولوحات المسؤول */}
-          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-1.5 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-190px)] flex flex-col justify-between shadow-sm overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-0 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-80px)] flex flex-col justify-between shadow-sm overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div>
-              <h2 className="hidden lg:flex text-sm font-bold text-gray-800 dark:text-slate-200 mb-2.5 pb-1.5 border-b border-gray-200 dark:border-slate-700 items-center gap-1.5 px-2.5">
+              <h2 className="hidden lg:flex text-sm font-bold text-gray-800 dark:text-slate-200 mb-2 pb-2 border-b border-gray-200 dark:border-slate-700 items-center gap-1.5 px-4">
                 <Layers className="w-4 h-4 text-indigo-650 dark:text-indigo-450" />
                 القائمة والأقسام
               </h2>
 
-              <div className="flex flex-row overflow-hidden lg:flex-col gap-1 pb-1 lg:pb-0 -mx-1 px-1 lg:mx-0 lg:px-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex flex-row overflow-hidden lg:flex-col gap-0 pb-0 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {visibleCategories.map((cat) => {
                   const isActive = activeCategory === (cat.id === 'all' ? null : cat.id);
                   const theme = categoryThemes[cat.id] || categoryThemes.all;
@@ -771,9 +771,9 @@ export default function AccountServersTable() {
                     <button
                       key={cat.id}
                       onClick={() => setActiveCategory(cat.id === 'all' ? null : cat.id)}
-                      className={`group flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-sm border text-base font-bold transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 lg:w-full hover:scale-[1.02] active:scale-[0.98] ${isActive
-                        ? theme.activeBg + ' border-transparent text-white shadow-md'
-                        : 'border-gray-200 dark:border-slate-700/60 text-gray-700 dark:text-slate-200 bg-gray-50/50 dark:bg-slate-800'
+                      className={`group flex items-center justify-between gap-2.5 px-3 py-1.5 border-b text-base font-bold transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 lg:w-full active:scale-[0.99] ${isActive
+                        ? theme.activeBg + ' text-white border-transparent shadow-inner'
+                        : 'border-gray-100 dark:border-slate-700/50 text-gray-700 dark:text-slate-200 bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800/80'
                         }`}
                     >
                       <div className="flex items-center gap-2">

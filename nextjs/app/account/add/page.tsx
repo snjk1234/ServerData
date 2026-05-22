@@ -54,25 +54,16 @@ export default function AddServerPage() {
       if (data) setAllRecords(data);
     };
 
-    const checkAdmin = async () => {
+    const checkAuth = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         router.push('/login');
         return;
       }
-      const { data: profile } = await (supabase as any)
-        .from('users')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-      
-      if (!profile || profile.role !== 'admin') {
-        router.push('/account');
-      }
     };
 
     fetchExisting();
-    checkAdmin();
+    checkAuth();
   }, []);
 
   useEffect(() => {
