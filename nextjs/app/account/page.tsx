@@ -6,6 +6,7 @@ import CryptoJS from 'crypto-js';
 import Link from 'next/link';
 import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw } from 'lucide-react';
 import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
+import AuditLogsViewer from '@/components/AuditLogsViewer';
 
 const categories = [
   { id: 'all', name: 'الكل' },
@@ -232,7 +233,8 @@ export default function AccountServersTable() {
             // إضافة تبويبات الإدارة للمسؤول
             const adminTabs = [
               { id: 'stats', name: 'لوحة الإحصائيات' },
-              { id: 'users', name: 'إدارة المستخدمين' }
+              { id: 'users', name: 'إدارة المستخدمين' },
+              { id: 'audit', name: 'سجل النشاطات' }
             ];
             filteredCats = [...categories, ...adminTabs];
           } else {
@@ -785,7 +787,7 @@ export default function AccountServersTable() {
                         </span>
                       </div>
 
-                      {cat.id !== 'stats' && cat.id !== 'users' ? (
+                      {cat.id !== 'stats' && cat.id !== 'users' && cat.id !== 'audit' ? (
                         <span className={`text-xs font-black px-2 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isActive ? theme.badgeActive : theme.badgeInactive}`}>
                           {count}
                         </span>
@@ -844,6 +846,13 @@ export default function AccountServersTable() {
 
           {/* محتوى الصفحة الرئيسي */}
           <div className="flex-1 min-w-0 w-full">
+
+            {/* سجل النشاطات */}
+            {activeCategory === 'audit' && (
+              <div className="w-full md:max-w-[996px] animate-fade-in">
+                <AuditLogsViewer />
+              </div>
+            )}
 
             {/* أولاً: في حال تفعيل تبويب الإحصائيات الإدارية */}
             {activeCategory === 'stats' && (
@@ -939,7 +948,7 @@ export default function AccountServersTable() {
                       توزيع الفروع بحسب التصنيف والعلامة التجارية
                     </h3>
                     <div className="space-y-3.5">
-                      {categories.filter(c => c.id !== 'all' && c.id !== 'stats' && c.id !== 'users').map(cat => {
+                      {categories.filter(c => c.id !== 'all' && c.id !== 'stats' && c.id !== 'users' && c.id !== 'audit').map(cat => {
                         const count = categoryCountsData[cat.id] || 0;
                         const pct = totalServers ? Math.round((count / totalServers) * 100) : 0;
                         const theme = categoryThemes[cat.id] || categoryThemes.all;
@@ -1258,7 +1267,7 @@ export default function AccountServersTable() {
             )}
 
             {/* ثالثاً: شاشة جداول البيانات والأقسام العادية للفروع (تظهر فقط عندما لا تكون الإحصائيات أو إدارة المستخدمين نشطة) */}
-            {activeCategory !== 'stats' && activeCategory !== 'users' && (
+            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && (
               <>
                 {/* كروت تصفية الحالات السريعة للفروع */}
                 <div className="w-full md:max-w-[996px] flex flex-row gap-2.5 mb-2">
