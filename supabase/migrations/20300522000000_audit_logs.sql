@@ -37,17 +37,17 @@ BEGIN
     current_user_id := auth.uid();
     
     IF TG_OP = 'INSERT' THEN
-        v_entity_name := NEW."اسم_الفرع";
+        v_entity_name := NEW."اسم_الفرع_ar";
         INSERT INTO public.audit_logs (user_id, action, entity_name, details)
         VALUES (current_user_id, 'إضافة فرع', v_entity_name, row_to_json(NEW)::jsonb);
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
-        v_entity_name := NEW."اسم_الفرع";
+        v_entity_name := NEW."اسم_الفرع_ar";
         INSERT INTO public.audit_logs (user_id, action, entity_name, details)
         VALUES (current_user_id, 'تعديل فرع', v_entity_name, jsonb_build_object('old', row_to_json(OLD), 'new', row_to_json(NEW)));
         RETURN NEW;
     ELSIF TG_OP = 'DELETE' THEN
-        v_entity_name := OLD."اسم_الفرع";
+        v_entity_name := OLD."اسم_الفرع_ar";
         INSERT INTO public.audit_logs (user_id, action, entity_name, details)
         VALUES (current_user_id, 'حذف فرع', v_entity_name, row_to_json(OLD)::jsonb);
         RETURN OLD;
