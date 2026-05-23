@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
@@ -155,6 +155,25 @@ export default function AccountServersTable() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleDropdownEnter = () => {
+    if (dropdownTimeout.current) clearTimeout(dropdownTimeout.current);
+    setIsDropdownOpen(true);
+  };
+
+  const handleDropdownLeave = () => {
+    dropdownTimeout.current = setTimeout(() => {
+      setIsDropdownOpen(false);
+    }, 300);
+  };
+
+  const handleSubCatClick = (id: string) => {
+    setActiveCategory(id);
+    setIsDropdownOpen(false);
+  };
 
   // حالة الترتيب للجدول
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
@@ -820,47 +839,85 @@ export default function AccountServersTable() {
         <div className="flex flex-col lg:flex-row gap-3 items-start">
 
           {/* القائمة الجانبية للتصنيفات ولوحات المسؤول */}
-          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-0 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-80px)] flex flex-col justify-between shadow-sm overflow-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-0 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-80px)] flex flex-col justify-between shadow-sm overflow-visible z-[100] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             <div>
               <h2 className="hidden lg:flex text-sm font-bold text-gray-800 dark:text-slate-200 mb-2 pb-2 border-b border-gray-200 dark:border-slate-700 items-center gap-1.5 px-4">
                 <Layers className="w-4 h-4 text-indigo-650 dark:text-indigo-450" />
                 القائمة والأقسام
               </h2>
 
-              <div className="flex flex-row overflow-hidden lg:flex-col gap-0 pb-0 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex flex-row overflow-visible lg:flex-col gap-0 pb-0 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                 {visibleCategories.map((cat) => {
                   const isActive = activeCategory === (cat.id === 'all' ? null : cat.id);
                   const theme = categoryThemes[cat.id] || categoryThemes.all;
                   const count = categoryCounts[cat.id];
+                  const subCategoriesList = ['فلورينا', 'فرنشايز', 'جملة', 'موزع معتمد', 'اسكتشر', 'فيلانتو', 'الإدارة'];
+
+                  const renderButton = (c, isSub = false, onClickOverride = null) => {
+                    const isCActive = activeCategory === (c.id === 'all' ? null : c.id);
+                    const cTheme = categoryThemes[c.id] || categoryThemes.all;
+                    const cCount = categoryCounts[c.id];
+                    return (
+                      <button
+                        onClick={onClickOverride ? onClickOverride : () => setActiveCategory(c.id === 'all' ? null : c.id)}
+                        className={`group flex items-center justify-between gap-2.5 px-3 py-1.5 border-b text-base font-bold transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 lg:w-full active:scale-[0.99] ${isCActive
+                          ? cTheme.activeBg + ' text-white border-transparent shadow-inner'
+                          : 'border-gray-100 dark:border-slate-700/50 text-gray-700 dark:text-slate-200 bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800/80'
+                          } ${isSub ? 'border-none hover:bg-gray-100 dark:hover:bg-slate-700' : ''}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`p-1.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isCActive ? 'bg-white/20 text-white' : cTheme.iconBg + ' ' + cTheme.iconColor}`}>
+                            {renderCategoryIcon(c.id, "w-4 h-4")}
+                          </span>
+                          <span className="transition-transform duration-300 group-hover:translate-x-[-3px]">
+                            {c.name}
+                          </span>
+                        </div>
+
+                        {c.id !== 'stats' && c.id !== 'users' && c.id !== 'audit' ? (
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isCActive ? cTheme.badgeActive : cTheme.badgeInactive}`}>
+                            {cCount}
+                          </span>
+                        ) : (
+                          <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isCActive ? 'bg-white/20 text-white' : 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400'}`}>
+                            إدارة
+                          </span>
+                        )}
+                      </button>
+                    );
+                  };
+
+                  if (subCategoriesList.includes(cat.id)) return null;
+
+                  if (cat.id === 'all') {
+                    const dropdownCats = visibleCategories.filter(c => subCategoriesList.includes(c.id));
+                    return (
+                      <div 
+                        key={cat.id} 
+                        className="relative shrink-0 z-[110]"
+                        onMouseEnter={handleDropdownEnter}
+                        onMouseLeave={handleDropdownLeave}
+                      >
+                        {renderButton(cat)}
+                        {dropdownCats.length > 0 && (
+                          <div className={`absolute top-full right-0 lg:top-0 lg:right-full lg:mr-2 w-56 transition-all duration-300 ${isDropdownOpen ? 'visible opacity-100 translate-y-0 lg:translate-x-0 pointer-events-auto' : 'invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-x-2 pointer-events-none'}`}>
+                            <div className="bg-white dark:bg-slate-800 rounded-md shadow-xl border border-gray-200 dark:border-slate-700 py-1 flex flex-col gap-0">
+                              {dropdownCats.map(subCat => (
+                                <div key={subCat.id} className="shrink-0 w-full">
+                                  {renderButton(subCat, true, () => handleSubCatClick(subCat.id))}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
 
                   return (
-                    <button
-                      key={cat.id}
-                      onClick={() => setActiveCategory(cat.id === 'all' ? null : cat.id)}
-                      className={`group flex items-center justify-between gap-2.5 px-3 py-1.5 border-b text-base font-bold transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 lg:w-full active:scale-[0.99] ${isActive
-                        ? theme.activeBg + ' text-white border-transparent shadow-inner'
-                        : 'border-gray-100 dark:border-slate-700/50 text-gray-700 dark:text-slate-200 bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800/80'
-                        }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span className={`p-1.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isActive ? 'bg-white/20 text-white' : theme.iconBg + ' ' + theme.iconColor}`}>
-                          {renderCategoryIcon(cat.id, "w-4 h-4")}
-                        </span>
-                        <span className="transition-transform duration-300 group-hover:translate-x-[-3px]">
-                          {cat.name}
-                        </span>
-                      </div>
-
-                      {cat.id !== 'stats' && cat.id !== 'users' && cat.id !== 'audit' ? (
-                        <span className={`text-xs font-black px-2 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isActive ? theme.badgeActive : theme.badgeInactive}`}>
-                          {count}
-                        </span>
-                      ) : (
-                        <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isActive ? 'bg-white/20 text-white' : 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400'}`}>
-                          إدارة
-                        </span>
-                      )}
-                    </button>
+                    <div key={cat.id} className="shrink-0">
+                      {renderButton(cat)}
+                    </div>
                   );
                 })}
               </div>
