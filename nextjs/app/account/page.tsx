@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
-import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw, Cpu } from 'lucide-react';
 import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
 import AuditLogsViewer from '@/components/AuditLogsViewer';
+import HardwareInventoryTable from '@/components/HardwareInventoryTable';
 
 const categories = [
   { id: 'all', name: 'الكل' },
@@ -117,6 +118,15 @@ const categoryThemes: Record<string, {
     textActive: 'text-emerald-600 dark:text-emerald-400',
     iconBg: 'bg-emerald-100 dark:bg-emerald-950/50',
     iconColor: 'text-emerald-600 dark:text-emerald-400'
+  },
+  hardware: {
+    activeBg: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-550/25',
+    badgeActive: 'bg-blue-700/50 text-blue-100',
+    badgeInactive: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',
+    borderHover: 'hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-blue-600 dark:text-blue-400',
+    iconBg: 'bg-blue-100 dark:bg-blue-950/50',
+    iconColor: 'text-blue-600 dark:text-blue-400'
   }
 };
 
@@ -132,6 +142,7 @@ const renderCategoryIcon = (id: string, className = "w-5 h-5") => {
     case 'الإدارة': return <Users className={className} />;
     case 'stats': return <BarChart2 className={className} />;
     case 'users': return <Users className={className} />;
+    case 'hardware': return <Cpu className={className} />;
     default: return <Store className={className} />;
   }
 };
@@ -144,6 +155,18 @@ export default function AccountServersTable() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
+
+  // حالة الترتيب للجدول
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => {
+      if (prev && prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
 
   // 1. صلاحيات المشرفين وتصفية التبويبات والمستخدم الحالي
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -234,15 +257,16 @@ export default function AccountServersTable() {
             const adminTabs = [
               { id: 'stats', name: 'لوحة الإحصائيات' },
               { id: 'users', name: 'إدارة المستخدمين' },
-              { id: 'audit', name: 'سجل النشاطات' }
+              { id: 'audit', name: 'سجل النشاطات' },
+              { id: 'hardware', name: 'جرد الأجهزة' }
             ];
             filteredCats = [...categories, ...adminTabs];
           } else {
             // تصفية التبويبات للمستخدم العادي
             const hasAll = allowed.includes('الكل') || allowed.includes('all');
-            filteredCats = categories.filter(cat => 
+            filteredCats = [...categories.filter(cat =>
               cat.id === 'all' || hasAll || allowed.includes(cat.id)
-            );
+            ), { id: 'hardware', name: 'جرد الأجهزة' }];
           }
           setVisibleCategories(filteredCats);
         }
@@ -688,8 +712,48 @@ export default function AccountServersTable() {
         if (createdDate > end) return false;
       }
     }
+
     return true;
   });
+
+  // تطبيق الترتيب على البيانات المفلترة
+  const sortedData = sortConfig
+    ? [...filteredData].sort((a, b) => {
+        let aVal: any;
+        let bVal: any;
+        switch (sortConfig.key) {
+          case 'رقم_الفرع':
+            aVal = Number(a.رقم_الفرع) || 0;
+            bVal = Number(b.رقم_الفرع) || 0;
+            break;
+          case 'اسم_الفرع_ar':
+            aVal = String(a.اسم_الفرع_ar || '');
+            bVal = String(b.اسم_الفرع_ar || '');
+            break;
+          case 'تصنيف_الفرع':
+            aVal = String(a.تصنيف_الفرع || '');
+            bVal = String(b.تصنيف_الفرع || '');
+            break;
+          case 'اسم_اليوزر':
+            aVal = String(a.اسم_اليوزر || '');
+            bVal = String(b.اسم_اليوزر || '');
+            break;
+          case 'حالة_اليوزر':
+            aVal = String(a.حالة_اليوزر || '');
+            bVal = String(b.حالة_اليوزر || '');
+            break;
+          case 'serial_number':
+            aVal = Number(a.serial_number) || 0;
+            bVal = Number(b.serial_number) || 0;
+            break;
+          default:
+            return 0;
+        }
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      })
+    : filteredData;
 
   // حساب إحصائيات لوحة التحكم
   const totalServers = data.length;
@@ -1266,8 +1330,12 @@ export default function AccountServersTable() {
               </div>
             )}
 
+            {activeCategory === 'hardware' && (
+              <HardwareInventoryTable />
+            )}
+
             {/* ثالثاً: شاشة جداول البيانات والأقسام العادية للفروع (تظهر فقط عندما لا تكون الإحصائيات أو إدارة المستخدمين نشطة) */}
-            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && (
+            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && activeCategory !== 'hardware' && (
               <>
                 {/* كروت تصفية الحالات السريعة للفروع */}
                 <div className="w-full md:max-w-[996px] flex flex-row gap-2.5 mb-2">
@@ -1424,25 +1492,73 @@ export default function AccountServersTable() {
                 {/* جدول فروع السيرفرات */}
                 <div className="overflow-auto max-h-[680px] bg-white dark:bg-slate-800 shadow-sm rounded-sm border border-gray-200 dark:border-slate-700">
                   <table className="min-w-full text-right border-collapse">
-                    <thead className="sticky top-0 bg-gray-150 dark:bg-slate-800 border-b border-gray-300 dark:border-slate-600 z-10 shadow-sm">
+                    <thead className="sticky top-0 bg-gray-200 dark:bg-slate-900 border-b border-gray-350 dark:border-slate-700 z-10 shadow-sm text-gray-800 dark:text-slate-100">
                       <tr>
-                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">رقم الفرع</th>
-                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الاسم (AR)</th>
-                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">التصنيف والمنطقة</th>
+                        <th
+                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
+                          onClick={() => handleSort('رقم_الفرع')}
+                        >
+                          <span className="flex items-center gap-1 justify-between">
+                            رقم الفرع
+                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'رقم_الفرع' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                          </span>
+                        </th>
+                        <th
+                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
+                          onClick={() => handleSort('اسم_الفرع_ar')}
+                        >
+                          <span className="flex items-center gap-1 justify-between">
+                            الاسم (AR)
+                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'اسم_الفرع_ar' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                          </span>
+                        </th>
+                        <th
+                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
+                          onClick={() => handleSort('تصنيف_الفرع')}
+                        >
+                          <span className="flex items-center gap-1 justify-between">
+                            التصنيف والمنطقة
+                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'تصنيف_الفرع' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                          </span>
+                        </th>
                         {activeCategory !== 'الإدارة' && (
                           <>
                             <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">العنوان والضريبة</th>
                           </>
                         )}
-                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اليوزر</th>
+                        <th
+                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
+                          onClick={() => handleSort('اسم_اليوزر')}
+                        >
+                          <span className="flex items-center gap-1 justify-between">
+                            اليوزر
+                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'اسم_اليوزر' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                          </span>
+                        </th>
                         {activeCategory !== 'الإدارة' && (
                           <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اسم الطابعة</th>
                         )}
                         <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الباسوورد</th>
                         {activeCategory !== 'الإدارة' && (
-                          <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">التسلسل</th>
+                          <th
+                            className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
+                            onClick={() => handleSort('serial_number')}
+                          >
+                            <span className="flex items-center gap-1 justify-between">
+                              التسلسل
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'serial_number' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                            </span>
+                          </th>
                         )}
-                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الحالة</th>
+                        <th
+                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
+                          onClick={() => handleSort('حالة_اليوزر')}
+                        >
+                          <span className="flex items-center gap-1 justify-between">
+                            الحالة
+                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'حالة_اليوزر' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                          </span>
+                        </th>
                         <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الخيارات</th>
                       </tr>
                     </thead>
@@ -1468,8 +1584,8 @@ export default function AccountServersTable() {
                             <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="flex gap-1"><div className="h-6 bg-gray-200 dark:bg-slate-700 rounded w-6"></div><div className="h-6 bg-gray-200 dark:bg-slate-700 rounded w-6"></div></div></td>
                           </tr>
                         ))
-                      ) : filteredData.length > 0 ? (
-                        filteredData.map(row => {
+                      ) : sortedData.length > 0 ? (
+                        sortedData.map(row => {
                         const rowBorderClass =
                           row.حالة_اليوزر === 'يعمل' ? 'border-r-2 border-r-green-500' :
                             row.حالة_اليوزر === 'مغلق نهائياً' ? 'border-r-2 border-r-red-500' :

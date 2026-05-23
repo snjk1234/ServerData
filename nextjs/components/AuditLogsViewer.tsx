@@ -14,6 +14,7 @@ interface AuditLog {
   users: {
     full_name: string;
   };
+  user_email?: string;
 }
 
 export default function AuditLogsViewer() {
@@ -43,17 +44,13 @@ export default function AuditLogsViewer() {
 
   const fetchLogs = async () => {
     try {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select(`
-          id, action, entity_name, details, created_at, user_id,
-          users (full_name)
-        `)
-        .order('created_at', { ascending: false })
-        .limit(100);
-
-      if (error) throw error;
-      setLogs(data || []);
+      const res = await fetch('/api/admin/audit-logs');
+      const data = await res.json();
+      if (data.logs) {
+        setLogs(data.logs);
+      } else {
+        throw new Error(data.error || 'Failed to fetch logs');
+      }
     } catch (err) {
       console.error('Error fetching audit logs:', err);
     } finally {
@@ -98,7 +95,7 @@ export default function AuditLogsViewer() {
 
       <div className="overflow-auto flex-1 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:bg-gray-300 dark:[&::-webkit-scrollbar-thumb]:bg-slate-600">
         <table className="w-full text-sm text-right">
-          <thead className="text-xs font-black text-gray-500 uppercase bg-gray-50 dark:bg-slate-700/50 dark:text-slate-400 sticky top-0 z-10 shadow-sm">
+          <thead className="text-xs font-black text-gray-700 dark:text-slate-200 uppercase bg-gray-150 dark:bg-slate-900 sticky top-0 z-10 shadow-sm border-b border-gray-300 dark:border-slate-750">
             <tr>
               <th className="px-4 py-3 border-b dark:border-slate-700">المستخدم</th>
               <th className="px-4 py-3 border-b dark:border-slate-700">نوع الحركة</th>
@@ -122,9 +119,16 @@ export default function AuditLogsViewer() {
                       <div className="w-7 h-7 rounded-sm bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-600 dark:text-slate-300">
                         <User className="w-4 h-4" />
                       </div>
-                      <span className="font-bold text-gray-800 dark:text-slate-200">
-                        {log.users?.full_name || 'مدير النظام (غير محدد)'}
-                      </span>
+                      <div className="flex flex-col">
+                        <span className="font-extrabold text-gray-800 dark:text-slate-200 text-xs">
+                          {log.users?.full_name || 'مدير النظام'}
+                        </span>
+                        {log.user_email && log.user_email !== '—' && (
+                          <span className="text-[10px] text-gray-500 dark:text-slate-400 font-mono tracking-wider mt-0.5">
+                            {log.user_email}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
