@@ -853,7 +853,7 @@ export default function AccountServersTable() {
                   const count = categoryCounts[cat.id];
                   const subCategoriesList = ['فلورينا', 'فرنشايز', 'جملة', 'موزع معتمد', 'اسكتشر', 'فيلانتو', 'الإدارة'];
 
-                  const renderButton = (c, isSub = false, onClickOverride = null) => {
+                  const renderButton = (c: any, isSub: boolean = false, onClickOverride: any = null) => {
                     const isCActive = activeCategory === (c.id === 'all' ? null : c.id);
                     const cTheme = categoryThemes[c.id] || categoryThemes.all;
                     const cCount = categoryCounts[c.id];
