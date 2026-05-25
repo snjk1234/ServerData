@@ -4,10 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
-import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw, Cpu } from 'lucide-react';
+import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw, Cpu, Monitor } from 'lucide-react';
 import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
 import AuditLogsViewer from '@/components/AuditLogsViewer';
 import HardwareInventoryTable from '@/components/HardwareInventoryTable';
+import ComputersInventoryTable from '@/components/ComputersInventoryTable';
+import BranchProfileModal from '@/components/BranchProfileModal';
 
 const categories = [
   { id: 'all', name: 'الكل' },
@@ -17,7 +19,8 @@ const categories = [
   { id: 'موزع معتمد', name: 'موزع معتمد' },
   { id: 'اسكتشر', name: 'اسكتشر' },
   { id: 'فيلانتو', name: 'فيلانتو' },
-  { id: 'الإدارة', name: 'الإدارة' }
+  { id: 'الإدارة', name: 'الإدارة' },
+  { id: 'كمبيوتر وملحقات', name: 'كمبيوتر وملحقات' }
 ];
 
 const categoryThemes: Record<string, {
@@ -101,6 +104,15 @@ const categoryThemes: Record<string, {
     iconBg: 'bg-slate-200 dark:bg-slate-800/50',
     iconColor: 'text-slate-750 dark:text-slate-400'
   },
+  'كمبيوتر وملحقات': {
+    activeBg: 'bg-cyan-600 dark:bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 dark:shadow-none',
+    badgeActive: 'bg-cyan-700/50 text-cyan-100',
+    badgeInactive: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',
+    borderHover: 'hover:border-cyan-500 hover:bg-cyan-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-cyan-600 dark:text-cyan-400',
+    iconBg: 'bg-cyan-100 dark:bg-cyan-950/50',
+    iconColor: 'text-cyan-600 dark:text-cyan-400'
+  },
   stats: {
     activeBg: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-550/25',
     badgeActive: 'bg-indigo-700/50 text-indigo-100',
@@ -140,6 +152,7 @@ const renderCategoryIcon = (id: string, className = "w-5 h-5") => {
     case 'اسكتشر': return <Footprints className={className} />;
     case 'فيلانتو': return <Sparkles className={className} />;
     case 'الإدارة': return <Users className={className} />;
+    case 'كمبيوتر وملحقات': return <Monitor className={className} />;
     case 'stats': return <BarChart2 className={className} />;
     case 'users': return <Users className={className} />;
     case 'hardware': return <Cpu className={className} />;
@@ -155,6 +168,7 @@ export default function AccountServersTable() {
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [selectedBranch, setSelectedBranch] = useState<{ id: string | number; name: string } | null>(null);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -279,13 +293,13 @@ export default function AccountServersTable() {
               { id: 'audit', name: 'سجل النشاطات' },
               { id: 'hardware', name: 'جرد الأجهزة' }
             ];
-            filteredCats = [...categories, ...adminTabs];
+            filteredCats = [...categories.filter(c => c.id !== 'كمبيوتر وملحقات'), ...adminTabs, { id: 'كمبيوتر وملحقات', name: 'كمبيوتر وملحقات' }];
           } else {
             // تصفية التبويبات للمستخدم العادي
             const hasAll = allowed.includes('الكل') || allowed.includes('all');
             filteredCats = [...categories.filter(cat =>
-              cat.id === 'all' || hasAll || allowed.includes(cat.id)
-            ), { id: 'hardware', name: 'جرد الأجهزة' }];
+              cat.id !== 'كمبيوتر وملحقات' && (cat.id === 'all' || hasAll || allowed.includes(cat.id))
+            ), { id: 'hardware', name: 'جرد الأجهزة' }, { id: 'كمبيوتر وملحقات', name: 'كمبيوتر وملحقات' }];
           }
           setVisibleCategories(filteredCats);
         }
@@ -703,7 +717,7 @@ export default function AccountServersTable() {
       const allowed = currentUser?.allowed_categories || [];
       const hasAll = allowed.includes('الكل') || allowed.includes('all');
       const branchCategory = r.تصنيف_الفرع || 'فلورينا'; // الافتراضي إذا كان التصنيف فارغاً
-      if (!hasAll && !allowed.includes(branchCategory)) {
+      if (!hasAll && !allowed.includes(branchCategory) && branchCategory !== 'كمبيوتر وملحقات') {
         return false;
       }
     }
@@ -1390,9 +1404,12 @@ export default function AccountServersTable() {
             {activeCategory === 'hardware' && (
               <HardwareInventoryTable />
             )}
+            {activeCategory === 'كمبيوتر وملحقات' && (
+              <ComputersInventoryTable />
+            )}
 
             {/* ثالثاً: شاشة جداول البيانات والأقسام العادية للفروع (تظهر فقط عندما لا تكون الإحصائيات أو إدارة المستخدمين نشطة) */}
-            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && activeCategory !== 'hardware' && (
+            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && activeCategory !== 'hardware' && activeCategory !== 'كمبيوتر وملحقات' && (
               <>
                 {/* كروت تصفية الحالات السريعة للفروع */}
                 <div className="w-full md:max-w-[996px] flex flex-row gap-2.5 mb-2">
@@ -1668,7 +1685,11 @@ export default function AccountServersTable() {
                                         'border-gray-200 dark:border-slate-700/60';
 
                         return (
-                          <tr key={row.id} className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass}`}>
+                          <tr 
+                            key={row.id} 
+                            onClick={() => setSelectedBranch({ id: row.رقم_الفرع, name: row.اسم_الفرع_ar })}
+                            className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass} cursor-pointer`}
+                          >
                             <td className="px-2 py-1 text-sm font-bold text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700/60">{row.رقم_الفرع}</td>
                             <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
                               <div className="flex flex-col">
@@ -2199,6 +2220,14 @@ export default function AccountServersTable() {
             <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">ثانية للإخفاء</span>
           </div>
         </div>
+      )}
+
+      {selectedBranch && (
+        <BranchProfileModal
+          branchId={selectedBranch.id}
+          branchName={selectedBranch.name}
+          onClose={() => setSelectedBranch(null)}
+        />
       )}
     </div>
   );

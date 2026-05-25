@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, RefreshCw, Cpu } from 'lucide-react';
+import { Search, RefreshCw, Monitor } from 'lucide-react';
 import BranchProfileModal from './BranchProfileModal';
 
-export default function HardwareInventoryTable() {
+export default function ComputersInventoryTable() {
   const [data, setData] = useState<any[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -16,7 +16,7 @@ export default function HardwareInventoryTable() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch('/api/hardware-inventory');
+      const res = await fetch('/api/computers-inventory');
       const json = await res.json();
       if (json.success) {
         setData(json.data);
@@ -24,7 +24,7 @@ export default function HardwareInventoryTable() {
         setLastFetch(new Date());
       }
     } catch (error) {
-      console.error('Failed to fetch hardware inventory:', error);
+      console.error('Failed to fetch computers inventory:', error);
     } finally {
       setIsLoading(false);
     }
@@ -50,10 +50,9 @@ export default function HardwareInventoryTable() {
     const s = search.toLowerCase();
     // البحث في الأعمدة الهامة
     return (
-      (row['الفرع'] || '').toLowerCase().includes(s) ||
-      (row['المنطقة'] || '').toLowerCase().includes(s) ||
-      (row['المشرف'] || '').toLowerCase().includes(s) ||
-      (row['اسم المسئول'] || '').toLowerCase().includes(s)
+      (row['رقم الفرع'] || '').toLowerCase().includes(s) ||
+      (row['اسم الفرع'] || '').toLowerCase().includes(s) ||
+      (row['المنطقة'] || '').toLowerCase().includes(s)
     );
   });
 
@@ -62,89 +61,6 @@ export default function HardwareInventoryTable() {
     const aValue = a[sortConfig.key] || '';
     const bValue = b[sortConfig.key] || '';
     
-    // معالجة خاصة لعمود الوقت - فرز بالتاريخ (سنة → شهر → يوم → وقت)
-    if (sortConfig.key === 'وقت') {
-      const parseDate = (val: string): Date => {
-        if (!val) return new Date(0);
-        
-        // تنظيف الفراغات المتكررة وتوحيدها
-        let cleanVal = val.trim().replace(/\s+/g, ' ');
-        
-        // استكشاف صباحاً/مساءً باللغة العربية والإنجليزية
-        const isPM = cleanVal.includes('م') || cleanVal.toLowerCase().includes('pm') || cleanVal.includes('??');
-        const isAM = cleanVal.includes('ص') || cleanVal.toLowerCase().includes('am');
-        
-        // حذف مؤشرات الصباح والمساء لتسهيل التحليل الرقمي
-        cleanVal = cleanVal.replace(/[مصص\?]|pm|am/gi, '').trim();
-        
-        const parts = cleanVal.split(' ');
-        let datePart = '';
-        let timePart = '';
-        
-        parts.forEach(part => {
-          if (part.includes('/') || part.includes('-')) {
-            datePart = part;
-          } else if (part.includes(':')) {
-            timePart = part;
-          }
-        });
-        
-        let year = 1970, month = 0, day = 1;
-        let hours = 0, minutes = 0, seconds = 0;
-        
-        if (datePart) {
-          const dParts = datePart.split(/[\/-]/);
-          if (dParts.length === 3) {
-            const p1 = parseInt(dParts[0], 10) || 0;
-            const p2 = parseInt(dParts[1], 10) || 0;
-            const p3 = parseInt(dParts[2], 10) || 0;
-            
-            if (p1 > 100) {
-              // YYYY-MM-DD
-              year = p1;
-              month = p2 - 1;
-              day = p3;
-            } else if (p3 > 100) {
-              // DD/MM/YYYY or MM/DD/YYYY
-              year = p3;
-              if (p2 > 12) {
-                // MM/DD/YYYY
-                month = p1 - 1;
-                day = p2;
-              } else {
-                // Default to DD/MM/YYYY
-                month = p2 - 1;
-                day = p1;
-              }
-            }
-          }
-        }
-        
-        if (timePart) {
-          const tParts = timePart.split(':');
-          hours = parseInt(tParts[0], 10) || 0;
-          minutes = parseInt(tParts[1], 10) || 0;
-          seconds = parseInt(tParts[2], 10) || 0;
-          
-          if (isPM && hours < 12) {
-            hours += 12;
-          } else if (isAM && hours === 12) {
-            hours = 0;
-          }
-        }
-        
-        const parsedDate = new Date(year, month, day, hours, minutes, seconds);
-        return isNaN(parsedDate.getTime()) ? new Date(0) : parsedDate;
-      };
-
-      const aDate = parseDate(aValue);
-      const bDate = parseDate(bValue);
-      // عكس الاتجاه لعمود الوقت: asc = الاحدث اولا, desc = الاقدم اولا
-      return sortConfig.direction === 'asc'
-        ? bDate.getTime() - aDate.getTime()
-        : aDate.getTime() - bDate.getTime();
-    }
-
     // محاولة تحويل القيم إلى أرقام إذا كانت كذلك لفرزها بشكل صحيح
     const aNum = Number(aValue);
     const bNum = Number(bValue);
@@ -161,15 +77,15 @@ export default function HardwareInventoryTable() {
   return (
     <div className="w-full space-y-4 animate-fade-in" dir="rtl">
       {/* الترويسة وأدوات التحكم */}
-      <div className="bg-gradient-to-r from-blue-900 to-blue-750 dark:from-slate-800 dark:to-slate-750 p-6 rounded-2xl border border-blue-200/20 dark:border-slate-700 shadow-lg text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="bg-gradient-to-r from-cyan-900 to-cyan-700 dark:from-slate-800 dark:to-slate-750 p-6 rounded-2xl border border-cyan-200/20 dark:border-slate-700 shadow-lg text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="space-y-1">
           <h2 className="text-2xl font-extrabold flex items-center gap-2">
-            <Cpu className="w-7 h-7 text-blue-300" />
-            جرد ملحقات الكمبيوتر والكاميرات
+            <Monitor className="w-7 h-7 text-cyan-300" />
+            بيانات الكمبيوتر والملحقات (جرد الأجهزة)
           </h2>
-          <p className="text-xs text-blue-100 dark:text-slate-350 flex items-center gap-2">
+          <p className="text-xs text-cyan-100 dark:text-slate-350 flex items-center gap-2">
             يتم جلب وتحديث البيانات تلقائياً من Google Sheets. آخر تحديث:{' '}
-            <span className="font-mono bg-blue-950/50 px-2 py-0.5 rounded text-blue-200">
+            <span className="font-mono bg-cyan-950/50 px-2 py-0.5 rounded text-cyan-200">
               {lastFetch ? lastFetch.toLocaleTimeString('ar-EG') : '...'}
             </span>
           </p>
@@ -178,12 +94,12 @@ export default function HardwareInventoryTable() {
           <div className="relative w-full sm:w-auto">
             <input
               type="text"
-              placeholder="بحث بالفرع، المنطقة، المشرف..."
+              placeholder="بحث برقم أو اسم الفرع..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:w-[250px] pr-8 pl-3 py-2 bg-white/10 border border-white/20 rounded-xl text-sm placeholder-blue-200 focus:outline-none focus:bg-white/20 transition-all font-semibold"
+              className="w-full sm:w-[250px] pr-8 pl-3 py-2 bg-white/10 border border-white/20 rounded-xl text-sm placeholder-cyan-200 focus:outline-none focus:bg-white/20 transition-all font-semibold"
             />
-            <Search className="w-4 h-4 absolute right-3 top-2.5 text-blue-200" />
+            <Search className="w-4 h-4 absolute right-3 top-2.5 text-cyan-200" />
           </div>
           <button
             onClick={fetchData}
@@ -208,7 +124,7 @@ export default function HardwareInventoryTable() {
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span>{header}</span>
-                    <span className={`text-[10px] ${sortConfig?.key === header ? 'text-blue-600 dark:text-blue-400 font-bold opacity-100' : 'text-gray-400 opacity-30 group-hover:opacity-70'}`}>
+                    <span className={`text-[10px] ${sortConfig?.key === header ? 'text-cyan-600 dark:text-cyan-400 font-bold opacity-100' : 'text-gray-400 opacity-30 group-hover:opacity-70'}`}>
                       {sortConfig?.key === header ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}
                     </span>
                   </div>
@@ -221,7 +137,7 @@ export default function HardwareInventoryTable() {
               <tr>
                 <td colSpan={headers.length || 20} className="px-6 py-16 text-center text-gray-500">
                   <div className="flex flex-col items-center gap-2">
-                    <RefreshCw className="w-8 h-8 text-blue-500 animate-spin" />
+                    <RefreshCw className="w-8 h-8 text-cyan-500 animate-spin" />
                     <span className="font-bold">جاري تحميل البيانات من منصة Google Sheets...</span>
                   </div>
                 </td>
@@ -237,24 +153,30 @@ export default function HardwareInventoryTable() {
                 <tr 
                   key={rIdx} 
                   onClick={() => {
-                    const branchId = row['الفرع'];
+                    const branchId = row['رقم الفرع'];
                     if (branchId) {
-                      setSelectedBranch({ id: branchId, name: row['اسم_الفرع'] || row['اسم الفرع'] || row['الفرع'] });
+                      setSelectedBranch({ id: branchId, name: row['اسم الفرع'] });
                     }
                   }}
-                  className="hover:bg-blue-50/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                  className="hover:bg-cyan-50/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
                 >
                   {headers.map((header, cIdx) => {
-                    const value = row[header];
-                    // تلوين بعض الحالات
-                    const isYes = value === 'نعم' || value === 'USB' || value === 'فايبر';
-                    const isNo = value === 'لا' || value === 'لا يوجد' || value === 'لايوجد';
+                    let value = row[header] || '';
                     
+                    // إذا كان الموقع يحتوي على رابط، نظهره كرابط قابل للنقر
+                    if (header === 'الموقع' && value.startsWith('http')) {
+                      return (
+                        <td key={cIdx} className="px-4 py-2 border-l border-gray-150 dark:border-slate-700/60 last:border-l-0 text-[11px]">
+                          <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                            رابط الموقع
+                          </a>
+                        </td>
+                      );
+                    }
+
                     return (
                       <td key={cIdx} className="px-4 py-2 border-l border-gray-150 dark:border-slate-700/60 last:border-l-0 text-gray-800 dark:text-slate-300 text-[11px] font-semibold">
-                        <span className={`px-1.5 py-0.5 rounded-sm ${isYes ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : isNo ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : ''}`}>
-                          {value || '—'}
-                        </span>
+                        {value || '—'}
                       </td>
                     );
                   })}
