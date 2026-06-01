@@ -1773,7 +1773,7 @@ export default function AccountServersTable() {
                                 {row.حالة_اليوزر}
                               </span>
                             </td>
-                            <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                            <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60" onClick={(e) => e.stopPropagation()}>
                               <div className="flex gap-1 items-center justify-center">
                                 <button
                                   onClick={() => handleEditClick(row)}

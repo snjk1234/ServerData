@@ -39,7 +39,16 @@ export default function BranchProfileModal({ branchId, branchName, onClose }: Br
         const hwRes = await fetch('/api/hardware-inventory');
         const hwJson = await hwRes.json();
         if (hwJson.success) {
-          const hwMatch = hwJson.data.find((r: any) => String(r['الفرع']).trim() === String(branchId).trim());
+          const hwMatch = hwJson.data.find((r: any) => {
+            const cellBranch = String(r['الفرع'] || '').trim().toLowerCase();
+            const targetName = String(branchName || '').trim().toLowerCase();
+            const targetId = String(branchId || '').trim().toLowerCase();
+            
+            if (!cellBranch) return false;
+            
+            return (targetName && (cellBranch.includes(targetName) || targetName.includes(cellBranch))) || 
+                   (cellBranch === targetId);
+          });
           if (hwMatch) setHwData(hwMatch);
         }
 
@@ -130,7 +139,6 @@ export default function BranchProfileModal({ branchId, branchName, onClose }: Br
                       <DetailRow label="حالة اليوزر" value={dbData.حالة_اليوزر} 
                         valueClass={dbData.حالة_اليوزر === 'يعمل' ? 'text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded' : 'text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded'} />
                       <DetailRow label="اسم اليوزر" value={dbData.اسم_اليوزر} />
-                      <DetailRow label="الباسوورد" value={dbData.باسوورد} isCode />
                       <DetailRow label="الرقم الضريبي" value={dbData.الرقم_الضريبي} />
                       <DetailRow label="طابعة A4" value={dbData.طابعة_a4} />
                       <DetailRow label="طابعة فواتير" value={dbData.طابعة_فواتير} />
