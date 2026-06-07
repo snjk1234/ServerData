@@ -17,7 +17,7 @@ class ServerDataNotifier extends _$ServerDataNotifier {
     final response = await client
         .from('server_data')
         .select()
-        .order('created_at', ascending: false);
+        .order('تاريخ_الانشاء', ascending: false);
     return (response as List).map((e) => ServerData.fromMap(e)).toList();
   }
 

@@ -27,13 +27,18 @@ class Metadata extends _$Metadata {
   }
 
   Future<SubscriptionWithPrice?> getSubscription() async {
-    final res = await client
-        .from('subscriptions')
-        .select('*, prices(*, products(*))')
-        .inFilter('status', ['trialing', 'active'])
-        .order('created', ascending: false)
-        .limit(1)
-        .maybeSingle();
-    return (res == null) ? null : SubscriptionWithPrice.fromJson(res);
+    try {
+      final res = await client
+          .from('subscriptions')
+          .select('*, prices(*, products(*))')
+          .inFilter('status', ['trialing', 'active'])
+          .order('created', ascending: false)
+          .limit(1)
+          .maybeSingle();
+      return (res == null) ? null : SubscriptionWithPrice.fromJson(res);
+    } catch (e) {
+      // If table 'subscriptions' does not exist in schema cache or any other DB issue, return null
+      return null;
+    }
   }
 }
