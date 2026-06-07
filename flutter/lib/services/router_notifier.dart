@@ -4,6 +4,7 @@ import 'package:posthog_flutter/posthog_flutter.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:serverdata/components/dialog_page.dart';
 import 'package:serverdata/components/reset_password_dialog.dart';
+import 'package:serverdata/screens/account_screen.dart';
 import 'package:serverdata/screens/auth_screen.dart';
 import 'package:serverdata/screens/server_list_screen.dart';
 import 'package:serverdata/screens/payments_screen.dart';
@@ -19,11 +20,13 @@ Uri? initUrl = Uri.base; // needed to set intiial url state
 @riverpod
 GoRouter router(RouterRef ref) {
   final authState = ref.watch(authProvider);
-  
+
   // تنظيف المسار المبدئي لضمان عدم تمرير مسارات محلية وهمية
   String getSanitizedPath(String? rawPath) {
     if (rawPath == null) return '/';
-    if (rawPath == '/login' || rawPath == '/loading' || rawPath == '/payments') {
+    if (rawPath == '/login' ||
+        rawPath == '/loading' ||
+        rawPath == '/payments') {
       return rawPath;
     }
     return '/';
@@ -89,6 +92,13 @@ GoRouter router(RouterRef ref) {
             },
           )
         ],
+      ),
+      GoRoute(
+        name: 'account',
+        path: '/account',
+        builder: (context, state) {
+          return const AccountScreen();
+        },
       ),
       GoRoute(
         name: 'payments',

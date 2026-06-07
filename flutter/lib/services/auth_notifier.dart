@@ -74,15 +74,22 @@ class Auth extends _$Auth {
 
   Future<Uri?> getUserStripeLink({String? price}) async {
     String? baseUrl = (kIsWeb) ? Uri.base.origin : null;
-
-    var res = await client.functions.invoke("get_stripe_url", body: {
+    final body = <String, dynamic>{
       "return_url": baseUrl,
-      "price": price,
-    });
-    String? redirectUrl = res.data["redirect_url"];
-    if (redirectUrl is String) {
-      return Uri.parse(redirectUrl);
+    };
+    if (price != null) {
+      body["price"] = price;
     }
+
+    final res = await client.functions.invoke("get_stripe_url", body: body);
+    final data = res.data;
+    if (data is Map<String, dynamic>) {
+      final redirectUrl = data["redirect_url"];
+      if (redirectUrl is String) {
+        return Uri.parse(redirectUrl);
+      }
+    }
+
     return null;
   }
 

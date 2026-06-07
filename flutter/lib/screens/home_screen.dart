@@ -27,32 +27,60 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         title: Text(widget.title),
         actions: [
           TextButton(
-            onPressed: () => context.replaceNamed("payments"),
-            child: const Text("Payments"),
+            onPressed: () => context.pushNamed('account'),
+            child: const Text('الحساب', style: TextStyle(color: Colors.white)),
           ),
-          TextButton(onPressed: authNotif.signOut, child: const Text("Logout")),
+          TextButton(
+              onPressed: authNotif.signOut,
+              child: const Text("خروج", style: TextStyle(color: Colors.white))),
         ],
       ),
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            metaAsync.when(
-              data: (metadata) {
-                final subscription = metadata?.subscription;
-                return (Text(subscription != null
-                    ? "You are currently on the ${subscription.prices?.products?.name} plan."
-                    : "You are not currently subscribed to any plan."));
-              },
-              loading: () => const CircularProgressIndicator(),
-              error: (_, __) => const Text("Failed to load subscription plan"),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => launchUrl(pricingUrl),
-              child: const Text("See Pricing"),
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              metaAsync.when(
+                data: (metadata) {
+                  final subscription = metadata?.subscription;
+                  final planName = subscription?.prices?.products?.name;
+                  final status = subscription?.status;
+                  return Column(
+                    children: [
+                      Text(
+                        subscription != null
+                            ? 'أنت مشترك حالياً في خطة ${planName ?? 'غير معروفة'}'
+                            : 'أنت غير مشترك في أي خطة حالياً.',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.bold),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      if (status != null)
+                        Text(
+                          'حالة الاشتراك: $status',
+                          style:
+                              const TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                      const SizedBox(height: 20),
+                      ElevatedButton(
+                        onPressed: () => context.pushNamed('payments'),
+                        child: const Text('إدارة الاشتراك'),
+                      ),
+                    ],
+                  );
+                },
+                loading: () => const CircularProgressIndicator(),
+                error: (_, __) => const Text('فشل تحميل حالة الاشتراك'),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton(
+                onPressed: () => launchUrl(pricingUrl),
+                child: const Text('عرض صفحة التسعير'),
+              ),
+            ],
+          ),
         ),
       ),
     );

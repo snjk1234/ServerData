@@ -22,7 +22,9 @@ class Metadata extends _$Metadata {
   }
 
   Future<UserMetadata> getUserDetails() async {
-    final res = await client.from('users').select('*').single();
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw Exception('User not logged in');
+    final res = await client.from('users').select('*').eq('id', userId).single();
     return UserMetadata.fromJson(res);
   }
 
