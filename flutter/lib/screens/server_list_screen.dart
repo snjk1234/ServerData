@@ -11,6 +11,7 @@ import 'package:csv/csv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/server_notifier.dart';
 import '../services/metadata_notifier.dart';
+import 'admin_tabs.dart';
 
 class ServerListScreen extends ConsumerStatefulWidget {
   const ServerListScreen({super.key});
@@ -30,7 +31,10 @@ class _ServerListScreenState extends ConsumerState<ServerListScreen> {
     'فيلانتو',
     'الإدارة',
     'كمبيوتر وملحقات',
-    'جرد الأجهزة'
+    'جرد الأجهزة',
+    'لوحة الإحصائيات',
+    'سجل النشاطات',
+    'إدارة المستخدمين'
   ];
 
   final List<String> _regions = [
@@ -602,6 +606,12 @@ class _ServerListScreenState extends ConsumerState<ServerListScreen> {
                       allowedIndices: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
                       customHeaders: ["اسم الفرع", "عدد الكاميرات", "سعة الهارد", "عدد الماوس", "الكيبورد", "الاسكانر", "درج الكاشير", "الشاشة الكبيرة", "الشاشة الصغيرة", "شاشة اللمس", "UPS", "السويتش", "جهاز البصمة"],
                     );
+                  } else if (category == 'لوحة الإحصائيات') {
+                    return StatisticsDashboardWidget(allServers: allServers);
+                  } else if (category == 'سجل النشاطات') {
+                    return const AuditLogsWidget();
+                  } else if (category == 'إدارة المستخدمين') {
+                    return const UsersManagementWidget();
                   }
 
                   final filteredServers = category == 'الكل' 

@@ -9,6 +9,7 @@ class UserMetadata {
   SubscriptionWithPrice? subscription;
   final String? role;
   final bool? isActive;
+  final List<String>? allowedCategories;
 
   UserMetadata({
     this.avatarUrl,
@@ -19,6 +20,7 @@ class UserMetadata {
     this.subscription,
     this.role,
     this.isActive,
+    this.allowedCategories,
   });
 
   factory UserMetadata.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,7 @@ class UserMetadata {
       paymentMethod: json['payment_method'],
       role: json['role'],
       isActive: json['is_active'],
+      allowedCategories: json['allowed_categories'] != null ? (json['allowed_categories'] as List).map((e) => e.toString()).toList() : null,
       subscription: json['subscription'] != null
           ? SubscriptionWithPrice.fromJson(json['subscription'])
           : null,
@@ -45,6 +48,7 @@ class UserMetadata {
       'payment_method': paymentMethod,
       'role': role,
       'is_active': isActive,
+      'allowed_categories': allowedCategories,
       'subscription': subscription?.toJson(),
     };
   }
