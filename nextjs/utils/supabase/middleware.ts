@@ -109,7 +109,7 @@ export const updateSession = async (request: NextRequest) => {
                           request.nextUrl.pathname.startsWith('/auth');
 
     // Only redirect if we know the user doesn't exist and it's an admin route
-    if (user === false && !isPublicRoute && request.nextUrl.pathname.startsWith('/admin')) {
+    if (!user && !isPublicRoute && request.nextUrl.pathname.startsWith('/admin')) {
       const url = request.nextUrl.clone();
       url.pathname = '/admin/login';
       return NextResponse.redirect(url);

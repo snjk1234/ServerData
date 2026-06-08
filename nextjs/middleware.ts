@@ -4,9 +4,15 @@ import { createClient } from '@/utils/supabase/middleware';
 export async function middleware(request: NextRequest) {
   const { supabase, response } = createClient(request);
   
-  // Refresh session
-  const { data: { user } } = await supabase.auth.getUser();
-
+  let user;
+  if (supabase) {
+    try {
+      const { data: { user: userData } } = await supabase.auth.getUser();
+      user = userData;
+    } catch (error) {
+      console.error('Supabase auth error:', error);
+    }
+  }
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
 

@@ -54,6 +54,8 @@ dependencies:
   share_plus: ^13.1.0
   pdf: ^3.10.7
   printing: ^5.11.0
+  http: ^1.6.0
+  csv: ^8.0.0
 
 dev_dependencies:
   flutter_test:

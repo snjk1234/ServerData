@@ -7,13 +7,15 @@ export async function middleware(request: NextRequest) {
 
     // Refresh session with error handling
     let user;
-    try {
-      const { data: { user: userData } } = await supabase.auth.getUser();
-      user = userData;
-    } catch (error) {
-      console.error('Supabase auth error:', error);
-      // If there's an error with Supabase auth, we'll continue without the user data
-      // This allows the app to work even if Supabase is temporarily unavailable
+    if (supabase) {
+      try {
+        const { data: { user: userData } } = await supabase.auth.getUser();
+        user = userData;
+      } catch (error) {
+        console.error('Supabase auth error:', error);
+        // If there's an error with Supabase auth, we'll continue without the user data
+        // This allows the app to work even if Supabase is temporarily unavailable
+      }
     }
 
     const url = request.nextUrl.clone();
