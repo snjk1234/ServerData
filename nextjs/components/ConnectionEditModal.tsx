@@ -52,14 +52,14 @@ export default function ConnectionEditModal({ connection, onClose, onSaved }: { 
 
       if (connection.connection_id) {
         // تحديث سجل موجود
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('branch_connections')
           .update(payload)
           .eq('id', connection.connection_id);
         if (error) throw error;
       } else {
         // إدخال سجل جديد
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('branch_connections')
           .insert([payload]);
         if (error) throw error;

@@ -28,29 +28,31 @@ export default function BranchConnectionsTable() {
       if (branchesError) throw branchesError;
 
       // جلب بيانات الاتصالات
-      const { data: connData, error: connError } = await supabase
+      const { data: connData, error: connError } = await (supabase as any)
         .from('branch_connections')
         .select('*');
 
       if (connError) throw connError;
 
       // دمج البيانات
-      const mergedData = branchesData.map(branch => {
-        const conn = connData.find(c => c.رقم_الفرع === branch.رقم_الفرع) || {};
+      const mergedData = branchesData.map((branch: any) => {
+        const conn = connData?.find((c: any) => String(c.branch_id).trim() === String(branch.رقم_الفرع).trim()) || {};
         return {
           ...branch,
           connection_id: conn.id || null,
-          نوع_الاتصال: conn.نوع_الاتصال || '',
-          مزود_الخدمة: conn.مزود_الخدمة || '',
-          رقم_الخدمة: conn.رقم_الخدمة || '',
-          دورة_التجديد: conn.دورة_التجديد || '',
-          تاريخ_الشراء: conn.تاريخ_الشراء || '',
-          تاريخ_الانتهاء: conn.تاريخ_الانتهاء || '',
-          التكلفة: conn.التكلفة || '',
-          مجموعة_الباقة: conn.مجموعة_الباقة || '',
-          نوع_الشريحة: conn.نوع_الشريحة || '',
-          ملاحظات: conn.ملاحظات || '',
-          تاريخ_الاضافة: conn.تاريخ_الاضافة || '',
+          نوع_الاتصال: conn.connection_type || '',
+          مزود_الخدمة: conn.provider || '',
+          رقم_الخدمة: conn.account_number || conn.landline_number || conn.sim_number || '',
+          دورة_التجديد: '', // Not in schema
+          تاريخ_الشراء: '', // Not in schema
+          تاريخ_الانتهاء: '', // Not in schema
+          التكلفة: '', // Not in schema
+          مجموعة_الباقة: '', // Not in schema
+          نوع_الشريحة: conn.sim_number ? 'بيانات' : '',
+          ملاحظات: conn.notes || '',
+          تاريخ_الاضافة: conn.created_at || '',
+          router_type: conn.router_type || '',
+          router_serial: conn.router_serial || ''
         };
       });
 
