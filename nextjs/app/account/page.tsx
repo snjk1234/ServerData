@@ -517,7 +517,7 @@ export default function AccountServersTable() {
     setIsFetchingExtra(true);
     try {
       // Fetch branch connections
-      const { data: conns } = await supabase.from('branch_connections').select('*');
+      const { data: conns } = await (supabase as any).from('branch_connections').select('*');
       
       // Fetch computers
       const compRes = await fetch('/api/computers-inventory');
@@ -530,7 +530,7 @@ export default function AccountServersTable() {
       const newExtra: Record<string, any> = {};
       data.forEach(row => {
         const branchIdStr = String(row.رقم_الفرع).trim();
-        const branchConns = conns?.filter(c => String(c.branch_id).trim() === branchIdStr) || [];
+        const branchConns = conns?.filter((c: any) => String(c.branch_id).trim() === branchIdStr) || [];
         
         // Find computer
         let comp = null;
