@@ -261,7 +261,7 @@ export default function AccountServersTable() {
     اسم_المدينة: '',
     الرقم_الضريبي: '',
     المنطقة: '',
-    serial_number: 100000
+    serial_number: '' as string | number
   });
 
   useEffect(() => {
@@ -511,7 +511,7 @@ export default function AccountServersTable() {
       اسم_المدينة: record.اسم_المدينة || '',
       الرقم_الضريبي: record.الرقم_الضريبي || '',
       المنطقة: record.المنطقة || '',
-      serial_number: record.serial_number || 100000
+      serial_number: record.serial_number ?? ''
     });
     setShowEditModal(true);
   };
@@ -526,13 +526,13 @@ export default function AccountServersTable() {
         اسم_اليوزر: editForm.اسم_اليوزر,
         حالة_اليوزر: editForm.حالة_اليوزر,
         تصنيف_الفرع: editForm.تصنيف_الفرع,
-        طابعة_a4: editForm.طابعة_a4,
-        طابعة_فواتير: editForm.طابعة_فواتير,
+        طابعة_a4: editForm.تصنيف_الفرع === 'الإدارة' ? null : (editForm.طابعة_a4 || null),
+        طابعة_فواتير: editForm.تصنيف_الفرع === 'الإدارة' ? null : (editForm.طابعة_فواتير || null),
         اسم_الشارع: editForm.اسم_الشارع || null,
         اسم_المدينة: editForm.اسم_المدينة || null,
-        الرقم_الضريبي: editForm.الرقم_الضريبي || null,
+        الرقم_الضريبي: editForm.تصنيف_الفرع === 'الإدارة' ? null : (editForm.الرقم_الضريبي || null),
         المنطقة: editForm.المنطقة || null,
-        serial_number: parseInt(String(editForm.serial_number)) || 100000
+        serial_number: editForm.تصنيف_الفرع === 'الإدارة' ? null : (parseInt(String(editForm.serial_number)) || null)
       };
 
       if (editForm.باسوورد.trim() !== '') {

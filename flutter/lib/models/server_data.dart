@@ -14,7 +14,7 @@ class ServerData {
   final String? region;
   final String? printerA4;
   final String? printerBill;
-  final int serialNumber;
+  final int? serialNumber;
 
   ServerData({
     required this.id,
@@ -26,7 +26,7 @@ class ServerData {
     required this.createdAt,
     required this.status,
     required this.category,
-    required this.serialNumber,
+    this.serialNumber,
     this.streetName,
     this.cityName,
     this.taxNo,
@@ -46,7 +46,7 @@ class ServerData {
       createdAt: DateTime.parse(map['تاريخ_الانشاء'] ?? DateTime.now().toIso8601String()),
       status: map['حالة_اليوزر'] ?? '',
       category: map['تصنيف_الفرع'] ?? 'الكل',
-      serialNumber: map['serial_number'] ?? 100000,
+      serialNumber: map['serial_number'],
       streetName: map['اسم_الشارع'],
       cityName: map['اسم_المدينة'],
       taxNo: map['الرقم_الضريبي'],
