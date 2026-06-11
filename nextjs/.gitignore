@@ -39,3 +39,6 @@ yarn-error.log*
 
 # certificates
 certificates
+
+.vercel
+.env*
