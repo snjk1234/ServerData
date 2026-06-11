@@ -18,6 +18,7 @@ export default function BranchProfileModal({ branchId, branchName, onClose }: Br
   const [dbData, setDbData] = useState<any>(null);
   const [hwData, setHwData] = useState<any>(null);
   const [compData, setCompData] = useState<any>(null);
+  const [connData, setConnData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -34,6 +35,13 @@ export default function BranchProfileModal({ branchId, branchName, onClose }: Br
           .single();
 
         if (serverRecord) setDbData(serverRecord);
+
+        // Fetch branch connections
+        const { data: conns } = await (supabase as any)
+          .from('branch_connections')
+          .select('*')
+          .eq('branch_id', branchId);
+        if (conns) setConnData(conns);
 
         // 2. Fetch from Hardware Inventory API
         const hwRes = await fetch('/api/hardware-inventory');
@@ -152,6 +160,42 @@ export default function BranchProfileModal({ branchId, branchName, onClose }: Br
                     </div>
                   )}
                 </div>
+
+                {/* كارت بيانات الاتصال */}
+                <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-orange-200 dark:border-orange-900/50 overflow-hidden">
+                  <div className="px-4 py-3 bg-orange-50/80 dark:bg-slate-800/80 border-b border-orange-200 dark:border-orange-900/50 flex items-center gap-2 font-bold text-orange-800 dark:text-orange-400">
+                    <Wifi className="w-5 h-5 text-orange-500" />
+                    بيانات الاتصال
+                  </div>
+                  {connData && connData.length > 0 ? (
+                    <div className="p-4 space-y-3 text-sm">
+                      {connData.map((conn, idx) => (
+                        <div key={idx} className="bg-gray-50 dark:bg-slate-700/30 p-2.5 rounded-md border border-gray-100 dark:border-slate-700">
+                           <div className="flex justify-between items-center mb-1 pb-1.5 border-b border-gray-200 dark:border-slate-600/50">
+                             <span className="font-bold text-gray-800 dark:text-slate-200">{conn.connection_type}</span>
+                             <span className="text-[10px] bg-orange-100 text-orange-700 dark:bg-orange-900/50 dark:text-orange-400 px-1.5 py-0.5 rounded font-bold">
+                               {conn.provider}
+                             </span>
+                           </div>
+                           <div className="text-[11px] text-gray-500 dark:text-slate-400 space-y-1 mt-2">
+                             {conn.account_number && <div className="flex justify-between"><span>رقم الحساب:</span> <span className="text-gray-800 dark:text-slate-300 font-bold">{conn.account_number}</span></div>}
+                             {conn.landline_number && <div className="flex justify-between"><span>رقم الهاتف:</span> <span className="text-gray-800 dark:text-slate-300 font-bold" dir="ltr">{conn.landline_number}</span></div>}
+                             {conn.sim_number && <div className="flex justify-between"><span>رقم الشريحة:</span> <span className="text-gray-800 dark:text-slate-300 font-bold" dir="ltr">{conn.sim_number}</span></div>}
+                             {conn.router_type && <div className="flex justify-between"><span>نوع الراوتر:</span> <span className="text-gray-800 dark:text-slate-300 font-bold">{conn.router_type}</span></div>}
+                             {conn.router_serial && <div className="flex justify-between"><span>سيريال الراوتر:</span> <span className="text-gray-800 dark:text-slate-300 font-bold font-mono">{conn.router_serial}</span></div>}
+                             {conn.notes && <div className="mt-2 text-orange-600 dark:text-orange-400 italic border-t border-orange-100 dark:border-slate-600 pt-1">{conn.notes}</div>}
+                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-gray-500 text-sm font-semibold flex flex-col items-center gap-2">
+                      <AlertCircle className="w-8 h-8 text-yellow-500" />
+                      لا يوجد بيانات اتصال مسجلة للفرع
+                    </div>
+                  )}
+                </div>
+
               </div>
 
               {/* العمود الثاني والثالث: الأجهزة والكمبيوترات */}

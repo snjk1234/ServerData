@@ -76,53 +76,56 @@ export default function ComputersInventoryTable() {
 
   return (
     <div className="w-full space-y-4 animate-fade-in" dir="rtl">
-      {/* الترويسة وأدوات التحكم */}
-      <div className="bg-gradient-to-r from-cyan-900 to-cyan-700 dark:from-slate-800 dark:to-slate-750 p-6 rounded-2xl border border-cyan-200/20 dark:border-slate-700 shadow-lg text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-extrabold flex items-center gap-2">
-            <Monitor className="w-7 h-7 text-cyan-300" />
-            بيانات الكمبيوتر والملحقات (جرد الأجهزة)
-          </h2>
-          <p className="text-xs text-cyan-100 dark:text-slate-350 flex items-center gap-2">
-            يتم جلب وتحديث البيانات تلقائياً من Google Sheets. آخر تحديث:{' '}
-            <span className="font-mono bg-cyan-950/50 px-2 py-0.5 rounded text-cyan-200">
-              {lastFetch ? lastFetch.toLocaleTimeString('ar-EG') : '...'}
-            </span>
-          </p>
+      {/* شريط البحث والفلترة وأزرار التحكم في صف واحد دائمًا */}
+      <div className="w-fit max-w-full bg-white dark:bg-slate-800 p-2 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-3 flex flex-row flex-nowrap gap-3 items-center justify-start overflow-x-auto overflow-y-hidden custom-scrollbar">
+        <div className="flex items-center gap-2 shrink-0 h-[34px] px-2 border-l-2 border-cyan-500">
+          <Monitor className="w-5 h-5 text-cyan-500" />
+          <span className="text-sm font-bold text-gray-800 dark:text-slate-200 whitespace-nowrap">بيانات الكمبيوتر والملحقات</span>
         </div>
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="relative w-full sm:w-auto">
-            <input
-              type="text"
-              placeholder="بحث برقم أو اسم الفرع..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:w-[250px] pr-8 pl-3 py-2 bg-white/10 border border-white/20 rounded-xl text-sm placeholder-cyan-200 focus:outline-none focus:bg-white/20 transition-all font-semibold"
-            />
-            <Search className="w-4 h-4 absolute right-3 top-2.5 text-cyan-200" />
+        
+        {/* البحث */}
+        <div className="w-[220px] md:w-[280px] shrink-0 relative h-[34px]">
+          <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+            <Search className="h-4 w-4 text-gray-400" />
           </div>
+          <input
+            type="text"
+            placeholder="بحث برقم أو اسم الفرع..."
+            className="w-full h-full pr-9 pl-8 py-1.5 bg-gray-50 dark:bg-slate-900/50 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* الأزرار العامة */}
+        <div className="flex items-center gap-2 shrink-0 h-[34px]">
           <button
             onClick={fetchData}
-            className="w-full sm:w-auto px-4 py-2 bg-white/10 hover:bg-white/20 active:scale-95 transition-all rounded-xl border border-white/10 text-xs font-bold flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+            className="h-full px-2 rounded-sm text-gray-500 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400 bg-gray-50 hover:bg-cyan-50 dark:bg-slate-900/50 dark:hover:bg-cyan-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+            title="تحديث البيانات"
           >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
-            تحديث البيانات
           </button>
+        </div>
+        
+        {/* معلومات التحديث */}
+        <div className="flex items-center gap-2 shrink-0 h-[34px] px-2 text-[10px] font-mono text-gray-500 dark:text-slate-400">
+          آخر تحديث: {lastFetch ? lastFetch.toLocaleTimeString('ar-EG') : '...'}
         </div>
       </div>
 
       {/* جدول البيانات */}
-      <div className="overflow-auto bg-white dark:bg-slate-800 shadow-sm rounded-2xl border border-gray-200 dark:border-slate-700 max-h-[650px] custom-scrollbar">
+      <div className="overflow-auto max-h-[680px] bg-white dark:bg-slate-800 shadow-sm rounded-sm border border-gray-200 dark:border-slate-700 custom-scrollbar">
         <table className="min-w-full text-right border-collapse whitespace-nowrap">
-          <thead className="sticky top-0 bg-gray-100 dark:bg-slate-900 border-b border-gray-300 dark:border-slate-700 z-10">
+          <thead className="sticky top-0 bg-gray-200 dark:bg-slate-900 border-b border-gray-350 dark:border-slate-700 z-10 shadow-sm text-gray-800 dark:text-slate-100">
             <tr>
               {headers.map((header, idx) => (
                 <th 
                   key={idx} 
                   onClick={() => handleSort(header)}
-                  className="px-4 py-3 text-[11px] font-black text-gray-700 dark:text-slate-200 border-l border-gray-200 dark:border-slate-700 last:border-l-0 cursor-pointer hover:bg-gray-200 dark:hover:bg-slate-800 transition-colors select-none group"
+                  className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors select-none group"
                 >
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-1">
                     <span>{header}</span>
                     <span className={`text-[10px] ${sortConfig?.key === header ? 'text-cyan-600 dark:text-cyan-400 font-bold opacity-100' : 'text-gray-400 opacity-30 group-hover:opacity-70'}`}>
                       {sortConfig?.key === header ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}
@@ -158,7 +161,7 @@ export default function ComputersInventoryTable() {
                       setSelectedBranch({ id: branchId, name: row['اسم الفرع'] });
                     }
                   }}
-                  className="hover:bg-cyan-50/50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer"
+                  className="hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
                 >
                   {headers.map((header, cIdx) => {
                     let value = row[header] || '';
@@ -166,7 +169,7 @@ export default function ComputersInventoryTable() {
                     // إذا كان الموقع يحتوي على رابط، نظهره كرابط قابل للنقر
                     if (header === 'الموقع' && value.startsWith('http')) {
                       return (
-                        <td key={cIdx} className="px-4 py-2 border-l border-gray-150 dark:border-slate-700/60 last:border-l-0 text-[11px]">
+                        <td key={cIdx} className="px-2 py-1 border border-gray-200 dark:border-slate-700 text-sm">
                           <a href={value} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
                             رابط الموقع
                           </a>
@@ -175,7 +178,7 @@ export default function ComputersInventoryTable() {
                     }
 
                     return (
-                      <td key={cIdx} className="px-4 py-2 border-l border-gray-150 dark:border-slate-700/60 last:border-l-0 text-gray-800 dark:text-slate-300 text-[11px] font-semibold">
+                      <td key={cIdx} className={`px-2 py-1 border border-gray-200 dark:border-slate-700 text-sm ${header === 'رقم الفرع' ? 'text-indigo-700 dark:text-indigo-400 font-mono font-bold' : 'text-gray-800 dark:text-slate-300'}`}>
                         {value || '—'}
                       </td>
                     );

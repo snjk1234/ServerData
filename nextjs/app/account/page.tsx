@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import CryptoJS from 'crypto-js';
 import Link from 'next/link';
-import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw, Cpu, Monitor } from 'lucide-react';
+import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw, Cpu, Monitor, Wifi, ChevronDown, ChevronUp } from 'lucide-react';
 import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
 import AuditLogsViewer from '@/components/AuditLogsViewer';
 import HardwareInventoryTable from '@/components/HardwareInventoryTable';
 import ComputersInventoryTable from '@/components/ComputersInventoryTable';
 import BranchProfileModal from '@/components/BranchProfileModal';
+import BranchConnectionsTable from '@/components/BranchConnectionsTable';
 
 const categories = [
   { id: 'all', name: 'الكل' },
@@ -20,7 +21,8 @@ const categories = [
   { id: 'اسكتشر', name: 'اسكتشر' },
   { id: 'فيلانتو', name: 'فيلانتو' },
   { id: 'الإدارة', name: 'الإدارة' },
-  { id: 'كمبيوتر وملحقات', name: 'كمبيوتر وملحقات' }
+  { id: 'كمبيوتر وملحقات', name: 'كمبيوتر وملحقات' },
+  { id: 'بيانات الاتصال', name: 'بيانات الاتصال' }
 ];
 
 const categoryThemes: Record<string, {
@@ -113,6 +115,15 @@ const categoryThemes: Record<string, {
     iconBg: 'bg-cyan-100 dark:bg-cyan-950/50',
     iconColor: 'text-cyan-600 dark:text-cyan-400'
   },
+  'بيانات الاتصال': {
+    activeBg: 'bg-orange-600 dark:bg-orange-500 text-white shadow-lg shadow-orange-500/20 dark:shadow-none',
+    badgeActive: 'bg-orange-700/50 text-orange-100',
+    badgeInactive: 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400',
+    borderHover: 'hover:border-orange-500 hover:bg-orange-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-orange-600 dark:text-orange-400',
+    iconBg: 'bg-orange-100 dark:bg-orange-950/50',
+    iconColor: 'text-orange-600 dark:text-orange-400'
+  },
   stats: {
     activeBg: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-550/25',
     badgeActive: 'bg-indigo-700/50 text-indigo-100',
@@ -169,6 +180,11 @@ export default function AccountServersTable() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
   const [selectedBranch, setSelectedBranch] = useState<{ id: string | number; name: string } | null>(null);
+
+  // حالات البيانات الإضافية (مؤشرات وتوسعة)
+  const [extraData, setExtraData] = useState<Record<string, { connections?: any[], computers?: any, hardware?: any }>>({});
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [isFetchingExtra, setIsFetchingExtra] = useState(false);
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -493,6 +509,78 @@ export default function AccountServersTable() {
     if (records) setData(records);
     if (error) console.error("Error fetching data:", error);
     setIsLoadingData(false);
+  };
+
+  // جلب البيانات الإضافية في الخلفية
+  const fetchExtraData = async () => {
+    if (data.length === 0) return;
+    setIsFetchingExtra(true);
+    try {
+      // Fetch branch connections
+      const { data: conns } = await supabase.from('branch_connections').select('*');
+      
+      // Fetch computers
+      const compRes = await fetch('/api/computers-inventory');
+      const compData = await compRes.json();
+      
+      // Fetch hardware
+      const hardRes = await fetch('/api/hardware-inventory');
+      const hardData = await hardRes.json();
+
+      const newExtra: Record<string, any> = {};
+      data.forEach(row => {
+        const branchIdStr = String(row.رقم_الفرع).trim();
+        const branchConns = conns?.filter(c => String(c.branch_id).trim() === branchIdStr) || [];
+        
+        // Find computer
+        let comp = null;
+        if (compData.success && compData.data) {
+           comp = compData.data.find((c: any) => String(c['رقم الفرع'] || c['الفرع']).trim() === branchIdStr);
+        }
+
+        // Find hardware
+        let hard = null;
+        if (hardData.success && hardData.data) {
+           const targetName = String(row.اسم_الفرع_ar || '').trim().toLowerCase();
+           const targetId = String(row.رقم_الفرع || '').trim().toLowerCase();
+           
+           hard = hardData.data.find((h: any) => {
+             const cellBranch = String(h['الفرع'] || h['رقم الفرع'] || '').trim().toLowerCase();
+             if (!cellBranch) return false;
+             return (targetName && (cellBranch.includes(targetName) || targetName.includes(cellBranch))) || 
+                    (cellBranch === targetId);
+           });
+        }
+
+        newExtra[branchIdStr] = {
+          connections: branchConns.length > 0 ? branchConns : undefined,
+          computers: comp,
+          hardware: hard
+        };
+      });
+
+      setExtraData(newExtra);
+    } catch (err) {
+      console.error('Error fetching extra data:', err);
+    } finally {
+      setIsFetchingExtra(false);
+    }
+  };
+
+  useEffect(() => {
+    if (data.length > 0) {
+      fetchExtraData();
+    }
+  }, [data]);
+
+  const toggleRowExpansion = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const handleEditClick = (record: any) => {
@@ -992,20 +1080,15 @@ export default function AccountServersTable() {
             {/* أولاً: في حال تفعيل تبويب الإحصائيات الإدارية */}
             {activeCategory === 'stats' && (
               <div className="w-full md:max-w-[996px] space-y-4 animate-fade-in">
-                {/* ترويسة الإحصائيات */}
-                <div className="bg-gradient-to-r from-indigo-900 to-indigo-750 dark:from-slate-800 dark:to-slate-750 p-6 rounded-2xl border border-indigo-200/20 dark:border-slate-700 shadow-lg text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-extrabold flex items-center gap-2">
-                      <BarChart2 className="w-7 h-7 text-amber-350" />
-                      لوحة الإحصائيات والتقارير العامة
-                    </h2>
-                    <p className="text-xs text-indigo-200 dark:text-slate-350">
-                      تحليل مرئي فوري لحالة الفروع وتوزيع السيرفرات وإحصائيات المستخدمين والنشاط الفعلي.
-                    </p>
+                {/* شريط عنوان الإحصائيات */}
+                <div className="w-fit max-w-full bg-white dark:bg-slate-800 p-2 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-3 flex flex-row flex-nowrap gap-3 items-center justify-start overflow-x-auto overflow-y-hidden custom-scrollbar">
+                  <div className="flex items-center gap-2 shrink-0 h-[34px] px-2 border-l-2 border-indigo-500">
+                    <BarChart2 className="w-5 h-5 text-indigo-500" />
+                    <span className="text-sm font-bold text-gray-800 dark:text-slate-200 whitespace-nowrap">لوحة الإحصائيات والتقارير</span>
                   </div>
-                  <div className="bg-white/10 dark:bg-slate-900/30 px-4 py-2 rounded-xl border border-white/10 text-xs font-bold font-mono text-indigo-100 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-green-400 animate-pulse" />
-                    تحديث فوري نشط
+                  <div className="flex items-center gap-2 shrink-0 h-[34px] bg-green-50 dark:bg-green-900/20 px-2.5 rounded-sm border border-green-200 dark:border-green-800/50">
+                    <Activity className="w-3.5 h-3.5 text-green-600 dark:text-green-400 animate-pulse" />
+                    <span className="text-[10px] font-bold text-green-700 dark:text-green-400 whitespace-nowrap">تحديث فوري نشط</span>
                   </div>
                 </div>
 
@@ -1202,40 +1285,36 @@ export default function AccountServersTable() {
             {/* ثانياً: في حال تفعيل تبويب إدارة وصلاحيات المستخدمين */}
             {activeCategory === 'users' && (
               <div className="w-full md:max-w-[996px] space-y-4 animate-fade-in">
-                {/* ترويسة إدارة المستخدمين */}
-                <div className="bg-gradient-to-r from-emerald-900 to-emerald-750 dark:from-slate-800 dark:to-slate-750 p-6 rounded-2xl border border-emerald-200/20 dark:border-slate-700 shadow-lg text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-extrabold flex items-center gap-2">
-                      <Users className="w-7 h-7 text-amber-350" />
-                      إدارة المستخدمين وصلاحيات الوصول
-                    </h2>
-                    <p className="text-xs text-emerald-100 dark:text-slate-350">
-                      التحكم الكامل بحسابات الموظفين والمشرفين، تفعيل أو تعطيل الحسابات، وتحديد صلاحيات رؤية التبويبات والأقسام.
-                    </p>
+                {/* شريط عنوان إدارة المستخدمين */}
+                <div className="w-fit max-w-full bg-white dark:bg-slate-800 p-2 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-3 flex flex-row flex-nowrap gap-3 items-center justify-start overflow-x-auto overflow-y-hidden custom-scrollbar">
+                  <div className="flex items-center gap-2 shrink-0 h-[34px] px-2 border-l-2 border-emerald-500">
+                    <Users className="w-5 h-5 text-emerald-500" />
+                    <span className="text-sm font-bold text-gray-800 dark:text-slate-200 whitespace-nowrap">إدارة المستخدمين وصلاحيات الوصول</span>
                   </div>
                   <button
                     onClick={fetchAdminUsers}
-                    className="px-4 py-2 bg-white/10 hover:bg-white/20 active:scale-95 transition-all rounded-xl border border-white/10 text-xs font-bold text-emerald-50 flex items-center gap-2 cursor-pointer shadow-sm"
+                    className="h-[34px] px-2.5 rounded-sm text-gray-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 bg-gray-50 hover:bg-emerald-50 dark:bg-slate-900/50 dark:hover:bg-emerald-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0 gap-1.5"
+                    title="تحديث القائمة"
                   >
-                    <RefreshCw className={`w-4 h-4 ${isLoadingUsers ? 'animate-spin' : ''}`} />
-                    تحديث القائمة
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingUsers ? 'animate-spin' : ''}`} />
+                    <span className="text-xs font-bold whitespace-nowrap">تحديث</span>
                   </button>
                 </div>
 
                 {/* جدول المستخدمين والبيانات */}
-                <div className="overflow-auto bg-white dark:bg-slate-800 shadow-sm rounded-2xl border border-gray-200 dark:border-slate-700">
+                <div className="overflow-auto max-h-[680px] bg-white dark:bg-slate-800 shadow-sm rounded-sm border border-gray-200 dark:border-slate-700">
                   <table className="min-w-full text-right border-collapse">
-                    <thead className="bg-gray-50 dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+                    <thead className="sticky top-0 bg-gray-200 dark:bg-slate-900 border-b border-gray-350 dark:border-slate-700 z-10 shadow-sm text-gray-800 dark:text-slate-100">
                       <tr>
-                        <th className="px-4 py-3 text-xs font-black text-gray-500 dark:text-slate-400">المستخدم</th>
-                        <th className="px-4 py-3 text-xs font-black text-gray-500 dark:text-slate-400">تاريخ الانضمام</th>
-                        <th className="px-4 py-3 text-xs font-black text-gray-500 dark:text-slate-400">الحالة والنشاط</th>
-                        <th className="px-4 py-3 text-xs font-black text-gray-500 dark:text-slate-400">صلاحيات رؤية التبويبات</th>
-                        <th className="px-4 py-3 text-xs font-black text-gray-500 dark:text-slate-400 text-center">التحكم</th>
-                        <th className="px-4 py-3 text-xs font-black text-gray-500 dark:text-slate-400 text-center">خيارات إضافية</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">المستخدم</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">تاريخ الانضمام</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الحالة والنشاط</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">صلاحيات رؤية التبويبات</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 text-center">التحكم</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 text-center">خيارات إضافية</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-slate-700 text-sm">
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
                       {isLoadingUsers ? (
                         <tr>
                           <td colSpan={6} className="px-6 py-16 text-center text-gray-500 dark:text-slate-450">
@@ -1407,9 +1486,12 @@ export default function AccountServersTable() {
             {activeCategory === 'كمبيوتر وملحقات' && (
               <ComputersInventoryTable />
             )}
+            {activeCategory === 'بيانات الاتصال' && (
+              <BranchConnectionsTable />
+            )}
 
             {/* ثالثاً: شاشة جداول البيانات والأقسام العادية للفروع (تظهر فقط عندما لا تكون الإحصائيات أو إدارة المستخدمين نشطة) */}
-            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && activeCategory !== 'hardware' && activeCategory !== 'كمبيوتر وملحقات' && (
+            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && activeCategory !== 'hardware' && activeCategory !== 'كمبيوتر وملحقات' && activeCategory !== 'بيانات الاتصال' && (
               <>
                 {/* كروت تصفية الحالات السريعة للفروع */}
                 <div className="w-full md:max-w-[996px] flex flex-row gap-2.5 mb-2">
@@ -1568,72 +1650,108 @@ export default function AccountServersTable() {
                   <table className="min-w-full text-right border-collapse">
                     <thead className="sticky top-0 bg-gray-200 dark:bg-slate-900 border-b border-gray-350 dark:border-slate-700 z-10 shadow-sm text-gray-800 dark:text-slate-100">
                       <tr>
-                        <th
-                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
-                          onClick={() => handleSort('رقم_الفرع')}
-                        >
-                          <span className="flex items-center gap-1 justify-between">
-                            رقم الفرع
-                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'رقم_الفرع' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
-                          </span>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[100px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('رقم_الفرع')}
+                            >
+                              <span>رقم الفرع</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'رقم_الفرع' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                            </div>
+                          </div>
                         </th>
-                        <th
-                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
-                          onClick={() => handleSort('اسم_الفرع_ar')}
-                        >
-                          <span className="flex items-center gap-1 justify-between">
-                            الاسم (AR)
-                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'اسم_الفرع_ar' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
-                          </span>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[150px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('اسم_الفرع_ar')}
+                            >
+                              <span>الاسم (AR)</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'اسم_الفرع_ar' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                            </div>
+                          </div>
                         </th>
-                        <th
-                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
-                          onClick={() => handleSort('تصنيف_الفرع')}
-                        >
-                          <span className="flex items-center gap-1 justify-between">
-                            التصنيف والمنطقة
-                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'تصنيف_الفرع' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
-                          </span>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[150px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('تصنيف_الفرع')}
+                            >
+                              <span>التصنيف والمنطقة</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'تصنيف_الفرع' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                            </div>
+                          </div>
                         </th>
                         {activeCategory !== 'الإدارة' && (
                           <>
-                            <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">العنوان والضريبة</th>
+                            <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                              <div className="resize-x overflow-hidden min-w-[150px]">
+                                <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                                  العنوان والضريبة
+                                </div>
+                              </div>
+                            </th>
                           </>
                         )}
-                        <th
-                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
-                          onClick={() => handleSort('اسم_اليوزر')}
-                        >
-                          <span className="flex items-center gap-1 justify-between">
-                            اليوزر
-                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'اسم_اليوزر' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
-                          </span>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[120px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('اسم_اليوزر')}
+                            >
+                              <span>اليوزر</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'اسم_اليوزر' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                            </div>
+                          </div>
                         </th>
                         {activeCategory !== 'الإدارة' && (
-                          <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">اسم الطابعة</th>
-                        )}
-                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الباسوورد</th>
-                        {activeCategory !== 'الإدارة' && (
-                          <th
-                            className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
-                            onClick={() => handleSort('serial_number')}
-                          >
-                            <span className="flex items-center gap-1 justify-between">
-                              التسلسل
-                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'serial_number' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
-                            </span>
+                          <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                            <div className="resize-x overflow-hidden min-w-[120px]">
+                              <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                                اسم الطابعة
+                              </div>
+                            </div>
                           </th>
                         )}
-                        <th
-                          className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors"
-                          onClick={() => handleSort('حالة_اليوزر')}
-                        >
-                          <span className="flex items-center gap-1 justify-between">
-                            الحالة
-                            <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'حالة_اليوزر' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
-                          </span>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[120px]">
+                            <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                              الباسوورد
+                            </div>
+                          </div>
                         </th>
-                        <th className="px-2 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">الخيارات</th>
+                        {activeCategory !== 'الإدارة' && (
+                          <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                            <div className="resize-x overflow-hidden min-w-[120px]">
+                              <div 
+                                className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                                onClick={() => handleSort('serial_number')}
+                              >
+                                <span>التسلسل</span>
+                                <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'serial_number' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                              </div>
+                            </div>
+                          </th>
+                        )}
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[100px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('حالة_اليوزر')}
+                            >
+                              <span>الحالة</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'حالة_اليوزر' ? (sortConfig.direction === 'asc' ? '↑' : '↓') : '⇅'}</span>
+                            </div>
+                          </div>
+                        </th>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[140px]">
+                            <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                              الخيارات
+                            </div>
+                          </div>
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
@@ -1685,26 +1803,52 @@ export default function AccountServersTable() {
                                         'border-gray-200 dark:border-slate-700/60';
 
                         return (
-                          <tr 
-                            key={row.id} 
-                            onClick={() => setSelectedBranch({ id: row.رقم_الفرع, name: row.اسم_الفرع_ar })}
-                            className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass} cursor-pointer`}
-                          >
-                            <td className="px-2 py-1 text-sm font-bold text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700/60">{row.رقم_الفرع}</td>
-                            <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
-                              <div className="flex flex-col">
-                                <span className="text-gray-900 dark:text-slate-100 font-semibold">{row.اسم_الفرع_ar}</span>
-                                <span className="text-xs text-gray-500 dark:text-slate-400 uppercase font-mono">{row.اسم_الفرع_en}</span>
+                          <React.Fragment key={row.id}>
+                            <tr 
+                              onClick={() => setSelectedBranch({ id: row.رقم_الفرع, name: row.اسم_الفرع_ar })}
+                              className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass} cursor-pointer`}
+                            >
+                            <td className="px-2 py-1 text-base font-medium text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700/60">{row.رقم_الفرع}</td>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60 relative">
+                              <div className="flex items-center justify-between">
+                                <div className="flex flex-col shrink-0">
+                                  <span className="text-gray-900 dark:text-slate-100 font-medium text-lg">{row.اسم_الفرع_ar}</span>
+                                  <span className="text-xs text-gray-500 dark:text-slate-400 uppercase font-mono">{row.اسم_الفرع_en}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-3 mr-auto pl-1">
+                                  {/* Inline Indicators */}
+                                  <div className="flex items-center gap-1.5">
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.رقم_الفرع]?.connections ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.رقم_الفرع]?.connections ? 'يوجد بيانات اتصال مسجلة' : 'لا يوجد بيانات اتصال'}
+                                    >
+                                      <Wifi className="w-3 h-3" />
+                                    </div>
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.رقم_الفرع]?.computers ? 'bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.رقم_الفرع]?.computers ? 'يوجد بيانات كمبيوتر مسجلة' : 'لا يوجد بيانات كمبيوتر'}
+                                    >
+                                      <Monitor className="w-3 h-3" />
+                                    </div>
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.رقم_الفرع]?.hardware ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.رقم_الفرع]?.hardware ? 'يوجد بيانات جرد أجهزة' : 'لا يوجد بيانات جرد أجهزة'}
+                                    >
+                                      <Cpu className="w-3 h-3" />
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             </td>
-                            <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
                               <div className="flex flex-col">
-                                <span className="text-gray-700 dark:text-slate-300 font-semibold">{row.تصنيف_الفرع || '—'}</span>
-                                <span className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">{row.المنطقة || '—'}</span>
+                                <span className="text-gray-700 dark:text-slate-300 font-medium text-base">{row.تصنيف_الفرع || '—'}</span>
+                                <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{row.المنطقة || '—'}</span>
                               </div>
                             </td>
                             {activeCategory !== 'الإدارة' && (
-                              <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                              <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
                                 <div className="flex flex-col gap-0.5">
                                   <div className="text-xs text-gray-600 dark:text-slate-400">
                                     {row.اسم_المدينة || row.اسم_الشارع ? (
@@ -1730,7 +1874,7 @@ export default function AccountServersTable() {
                                 </div>
                               </td>
                             )}
-                            <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
                               {decryptedPasswords[row.id] ? (
                                 <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                                   <span className="font-mono text-green-600 dark:text-green-400 font-bold tracking-wider">{decryptedPasswords[row.id]}</span>
@@ -1764,7 +1908,7 @@ export default function AccountServersTable() {
                             {activeCategory !== 'الإدارة' && (
                               <td className="px-2 py-1 text-sm text-center text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.serial_number || '—'}</td>
                             )}
-                            <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60">
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
                               <span className={`px-1.5 py-0.5 rounded-sm text-xs font-bold ${row.حالة_اليوزر === 'يعمل' ? 'bg-green-105 dark:bg-green-950/30 text-green-800 dark:text-green-400 border border-green-200/50 dark:border-green-900/50' :
                                 row.حالة_اليوزر === 'مغلق نهائياً' ? 'bg-red-105 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200/50 dark:border-red-900/50' :
                                   row.حالة_اليوزر === 'الافتتاح قريبا' ? 'bg-blue-105 dark:bg-blue-950/30 text-blue-800 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/50' :
@@ -1773,7 +1917,7 @@ export default function AccountServersTable() {
                                 {row.حالة_اليوزر}
                               </span>
                             </td>
-                            <td className="px-2 py-1 text-sm border border-gray-200 dark:border-slate-700/60" onClick={(e) => e.stopPropagation()}>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60" onClick={(e) => e.stopPropagation()}>
                               <div className="flex gap-1 items-center justify-center">
                                 <button
                                   onClick={() => handleEditClick(row)}
@@ -1806,6 +1950,7 @@ export default function AccountServersTable() {
                               </div>
                             </td>
                           </tr>
+                        </React.Fragment>
                         );
                       })
                       ) : (
