@@ -15,7 +15,7 @@ interface ConnectionModalProps {
 export default function ConnectionModal({ mode, branches, connection, onClose, onSaved }: ConnectionModalProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [selectedBranchId, setSelectedBranchId] = useState(mode === 'edit' && connection ? connection.رقم_الفرع : '');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [branchSearchValue, setBranchSearchValue] = useState('');
   const supabase = createClient();
   
   const initialData = mode === 'edit' && connection ? connection : {};
@@ -97,9 +97,7 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
     }
   };
 
-  const filteredBranches = mode === 'add' && branches 
-    ? branches.filter(b => b.اسم_الفرع_ar?.includes(searchQuery) || String(b.رقم_الفرع).includes(searchQuery))
-    : [];
+
 
   const modalTitle = mode === 'add' ? 'إضافة بيانات اتصال جديدة' : 'تعديل بيانات الاتصال';
   const submitButtonText = mode === 'add' ? 'إضافة بيانات الاتصال' : 'حفظ البيانات';
@@ -107,11 +105,11 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in" dir="rtl">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-2xl border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="p-4 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/50">
+        <div className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/20 px-4 py-3 shrink-0">
           <div>
-            <h2 className="text-lg font-black text-gray-800 dark:text-slate-100">
+            <h2 className="text-sm font-extrabold text-gray-900 dark:text-slate-100">
               {modalTitle}
             </h2>
             {mode === 'edit' && connection && (
@@ -122,41 +120,36 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 cursor-pointer"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto custom-scrollbar space-y-5">
+        <div className="overflow-y-auto p-4 custom-scrollbar space-y-4">
           {/* Branch Selection for ADD Mode */}
           {mode === 'add' && (
-            <div className="space-y-1.5 p-4 bg-indigo-50/50 dark:bg-indigo-900/10 border border-indigo-100 dark:border-indigo-900/50 rounded-xl">
-              <label className="text-sm font-bold text-indigo-800 dark:text-indigo-300">اختيار الفرع *</label>
-              <div className="flex gap-2">
-                <select
-                  value={selectedBranchId}
-                  onChange={(e) => setSelectedBranchId(e.target.value)}
-                  className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-                >
-                  <option value="">-- اختر الفرع --</option>
-                  {filteredBranches.map(b => (
-                    <option key={b.رقم_الفرع} value={b.رقم_الفرع}>
-                      {b.رقم_الفرع} - {b.اسم_الفرع_ar}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="relative mt-2">
-                <Search className="w-4 h-4 absolute right-3 top-2.5 text-indigo-400" />
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">اختيار أو بحث عن الفرع *</label>
+              <div className="relative">
+                <Search className="w-4 h-4 absolute right-2.5 top-2 text-gray-400" />
                 <input
-                  type="text"
-                  placeholder="بحث في الفروع..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pr-9 pl-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-lg text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                  list="branches-datalist"
+                  value={branchSearchValue}
+                  onChange={(e) => {
+                    setBranchSearchValue(e.target.value);
+                    const parts = e.target.value.split(' - ');
+                    if (parts.length > 0) setSelectedBranchId(parts[0].trim());
+                  }}
+                  placeholder="ابحث بالاسم أو الرقم..."
+                  className="w-full pr-8 pl-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
+                <datalist id="branches-datalist">
+                  {branches?.map(b => (
+                    <option key={b.رقم_الفرع} value={`${b.رقم_الفرع} - ${b.اسم_الفرع_ar}`} />
+                  ))}
+                </datalist>
               </div>
             </div>
           )}
@@ -165,12 +158,12 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
           {/* Section 1: Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600 dark:text-slate-400">نوع الاتصال</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">نوع الاتصال</label>
               <select
                 name="نوع_الاتصال"
                 value={formData.نوع_الاتصال}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-${themeColorClass}-500 outline-none`}
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">اختيار...</option>
                 <option value="شريحة بيانات">شريحة بيانات</option>
@@ -181,12 +174,12 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
             </div>
             
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600 dark:text-slate-400">مزود الخدمة</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">مزود الخدمة</label>
               <select
                 name="مزود_الخدمة"
                 value={formData.مزود_الخدمة}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-${themeColorClass}-500 outline-none`}
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">اختيار...</option>
                 <option value="STC">STC</option>
@@ -199,26 +192,26 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600 dark:text-slate-400">رقم الخدمة / الشريحة</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">رقم الخدمة / الشريحة</label>
               <input
                 type="text"
                 name="رقم_الخدمة"
                 value={formData.رقم_الخدمة}
                 onChange={handleChange}
                 placeholder="مثال: 05xxxx أو رقم الحساب"
-                className={`w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-${themeColorClass}-500 outline-none`}
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600 dark:text-slate-400">التكلفة (ريال)</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">التكلفة (ريال)</label>
               <input
                 type="number"
                 name="التكلفة"
                 value={formData.التكلفة}
                 onChange={handleChange}
                 placeholder="0.00"
-                className={`w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-${themeColorClass}-500 outline-none`}
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
           </div>
@@ -228,12 +221,12 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
           {/* Section 2: Dates and Renewal */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600 dark:text-slate-400">دورة التجديد</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">دورة التجديد</label>
               <select
                 name="دورة_التجديد"
                 value={formData.دورة_التجديد}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-${themeColorClass}-50 dark:bg-${themeColorClass}-900/10 border border-${themeColorClass}-200 dark:border-${themeColorClass}-900/50 rounded-lg text-sm focus:ring-2 focus:ring-${themeColorClass}-500 outline-none font-semibold text-${themeColorClass}-900 dark:text-${themeColorClass}-100`}
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-semibold"
               >
                 <option value="">بدون تجديد دوري</option>
                 <option value="1 شهر">شهري (1 شهر)</option>
@@ -245,13 +238,13 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-600 dark:text-slate-400">تاريخ الشراء / آخر تجديد</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">تاريخ الشراء / آخر تجديد</label>
               <input
                 type="date"
                 name="تاريخ_الشراء"
                 value={formData.تاريخ_الشراء}
                 onChange={handleChange}
-                className={`w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-${themeColorClass}-500 outline-none`}
+                className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
@@ -265,7 +258,7 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
                 name="تاريخ_الانتهاء"
                 value={formData.تاريخ_الانتهاء}
                 onChange={handleChange}
-                className="w-full px-3 py-2 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-900/50 rounded-lg text-sm focus:ring-2 focus:ring-red-500 outline-none font-bold text-red-700 dark:text-red-400"
+                className="w-full px-2.5 py-1.5 bg-red-50 dark:bg-red-900/10 text-red-700 dark:text-red-400 border border-red-300 dark:border-red-800 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-red-500 font-bold"
               />
             </div>
           </div>
@@ -274,7 +267,7 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
           {formData.نوع_الاتصال === 'شريحة بيانات' && (
             <>
               <hr className="border-gray-100 dark:border-slate-700" />
-              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+              <div className="bg-indigo-50/50 dark:bg-indigo-900/10 p-3 rounded-sm border border-indigo-200 dark:border-indigo-900/50 space-y-3">
                 <h3 className="text-xs font-extrabold text-indigo-800 dark:text-indigo-300">إعدادات الباقات المشتركة (إذا كانت الشريحة ضمن باقة)</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
@@ -285,7 +278,7 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
                       value={formData.مجموعة_الباقة}
                       onChange={handleChange}
                       placeholder="مثال: باقة رقم 1"
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     />
                   </div>
                   <div className="space-y-1.5">
@@ -294,7 +287,7 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
                       name="نوع_الشريحة"
                       value={formData.نوع_الشريحة}
                       onChange={handleChange}
-                      className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     >
                       <option value="">عادية / غير مشتركة</option>
                       <option value="رئيسية">شريحة رئيسية</option>
@@ -308,29 +301,29 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
 
           {/* Notes */}
           <div className="space-y-1.5">
-            <label className="text-xs font-bold text-gray-600 dark:text-slate-400">ملاحظات إضافية</label>
+            <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">ملاحظات إضافية</label>
             <textarea
               name="ملاحظات"
               value={formData.ملاحظات}
               onChange={handleChange}
               rows={2}
-              className={`w-full px-3 py-2 bg-gray-50 dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-${themeColorClass}-500 outline-none resize-none`}
+              className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none"
             ></textarea>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/50 flex justify-end gap-2">
+        <div className="flex items-center justify-end gap-2 pt-3 border-t border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/20 px-4 py-3 shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-bold text-gray-600 hover:bg-gray-200 dark:text-slate-300 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
+            className="px-4 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold rounded-sm transition-colors text-xs cursor-pointer"
           >
             إلغاء
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving || (mode === 'add' && !selectedBranchId)}
-            className={`px-6 py-2 bg-${themeColorClass}-600 hover:bg-${themeColorClass}-700 text-white text-sm font-bold rounded-lg transition-all shadow-md shadow-${themeColorClass}-500/20 flex items-center gap-2 cursor-pointer disabled:opacity-50`}
+            className={`px-6 py-1.5 bg-${themeColorClass}-600 hover:bg-${themeColorClass}-700 text-white font-bold rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm cursor-pointer disabled:opacity-50`}
           >
             {isSaving ? (
               <>جاري الحفظ...</>
