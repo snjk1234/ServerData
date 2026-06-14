@@ -1,0 +1,30 @@
+                            <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒}</td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/60">
+                                <div className="flex flex-col gap-0.5 text-xs">
+                                  <span className="font-semibold text-indigo-600 dark:text-indigo-400 font-mono">A4: {row.╪╖╪د╪ذ╪╣╪ر_a4 || 'ظ¤'}</span>
+                                  <span className="text-gray-500 dark:text-slate-400 font-mono">┘╪د╪ز┘ê╪▒╪ر: {row.╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒ || 'ظ¤'}</span>
+                                </div>
+                              </td>
+                            )}
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                              {decryptedPasswords[row.id] ? (
+                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <span className="font-mono text-green-600 dark:text-green-400 font-bold tracking-wider">{decryptedPasswords[row.id]}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(decryptedPasswords[row.id]);
+                                    }}
+                                    className="p-1 rounded-sm text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-50 hover:bg-indigo-50 dark:bg-slate-900/50 dark:hover:bg-indigo-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                    title="┘╪│╪« ┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <span className="text-gray-400 tracking-widest font-mono">ظتظتظتظتظتظت</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();

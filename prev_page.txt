@@ -1,0 +1,2379 @@
+﻿'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { createClient } from '@/utils/supabase/client';
+import CryptoJS from 'crypto-js';
+import Link from 'next/link';
+import { Eye, EyeOff, Copy, Printer, Trash2, LayoutGrid, Store, ShieldCheck, ShoppingBag, Layers, Sparkles, Footprints, Edit, Save, AlertTriangle, Key, AlertCircle, Users, BarChart2, Activity, UserX, Check, X, Shield, RefreshCw, Cpu, Monitor, Wifi, ChevronDown, ChevronUp } from 'lucide-react';
+import PrintableBranchFoundation from '@/components/PrintableBranchFoundation';
+import AuditLogsViewer from '@/components/AuditLogsViewer';
+import HardwareInventoryTable from '@/components/HardwareInventoryTable';
+import ComputersInventoryTable from '@/components/ComputersInventoryTable';
+import BranchProfileModal from '@/components/BranchProfileModal';
+import BranchConnectionsTable from '@/components/BranchConnectionsTable';
+
+const categories = [
+  { id: 'all', name: '╪د┘┘â┘' },
+  { id: '┘┘┘ê╪▒┘è┘╪د', name: '┘┘┘ê╪▒┘è┘╪د' },
+  { id: '┘╪▒┘╪┤╪د┘è╪▓', name: '┘╪▒┘╪┤╪د┘è╪▓' },
+  { id: '╪ش┘à┘╪ر', name: '╪ش┘à┘╪ر' },
+  { id: '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»', name: '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»' },
+  { id: '╪د╪│┘â╪ز╪┤╪▒', name: '╪د╪│┘â╪ز╪┤╪▒' },
+  { id: '┘┘è┘╪د┘╪ز┘ê', name: '┘┘è┘╪د┘╪ز┘ê' },
+  { id: '╪د┘╪ح╪»╪د╪▒╪ر', name: '╪د┘╪ح╪»╪د╪▒╪ر' },
+  { id: '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز', name: '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز' },
+  { id: '╪ذ┘è╪د┘╪د╪ز ╪د┘╪د╪ز╪╡╪د┘', name: '╪ذ┘è╪د┘╪د╪ز ╪د┘╪د╪ز╪╡╪د┘' }
+];
+
+const categoryThemes: Record<string, {
+  activeBg: string;
+  badgeActive: string;
+  badgeInactive: string;
+  borderHover: string;
+  textActive: string;
+  iconBg: string;
+  iconColor: string;
+}> = {
+  all: {
+    activeBg: 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 dark:shadow-none',
+    badgeActive: 'bg-indigo-700/50 text-indigo-100',
+    badgeInactive: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400',
+    borderHover: 'hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-indigo-600 dark:text-indigo-400',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-950/50',
+    iconColor: 'text-indigo-600 dark:text-indigo-400'
+  },
+  '┘┘┘ê╪▒┘è┘╪د': {
+    activeBg: 'bg-sky-600 dark:bg-sky-500 text-white shadow-lg shadow-sky-500/20 dark:shadow-none',
+    badgeActive: 'bg-sky-700/50 text-sky-100',
+    badgeInactive: 'bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400',
+    borderHover: 'hover:border-sky-500 hover:bg-sky-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-sky-600 dark:text-sky-400',
+    iconBg: 'bg-sky-100 dark:bg-sky-950/50',
+    iconColor: 'text-sky-600 dark:text-sky-400'
+  },
+  '┘╪▒┘╪┤╪د┘è╪▓': {
+    activeBg: 'bg-purple-600 dark:bg-purple-500 text-white shadow-lg shadow-purple-500/20 dark:shadow-none',
+    badgeActive: 'bg-purple-700/50 text-purple-100',
+    badgeInactive: 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400',
+    borderHover: 'hover:border-purple-500 hover:bg-purple-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-purple-600 dark:text-purple-400',
+    iconBg: 'bg-purple-100 dark:bg-purple-950/50',
+    iconColor: 'text-purple-600 dark:text-purple-400'
+  },
+  '╪ش┘à┘╪ر': {
+    activeBg: 'bg-amber-500 dark:bg-amber-500 text-white shadow-lg shadow-amber-500/20 dark:shadow-none',
+    badgeActive: 'bg-amber-600/50 text-amber-100',
+    badgeInactive: 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400',
+    borderHover: 'hover:border-amber-500 hover:bg-amber-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-amber-600 dark:text-amber-400',
+    iconBg: 'bg-amber-100 dark:bg-amber-950/50',
+    iconColor: 'text-amber-600 dark:text-amber-400'
+  },
+  '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»': {
+    activeBg: 'bg-emerald-600 dark:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 dark:shadow-none',
+    badgeActive: 'bg-emerald-700/50 text-emerald-100',
+    badgeInactive: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400',
+    borderHover: 'hover:border-emerald-500 hover:bg-emerald-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-emerald-600 dark:text-emerald-400',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-950/50',
+    iconColor: 'text-emerald-600 dark:text-emerald-400'
+  },
+  '╪د╪│┘â╪ز╪┤╪▒': {
+    activeBg: 'bg-indigo-600 dark:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 dark:shadow-none',
+    badgeActive: 'bg-indigo-700/50 text-indigo-100',
+    badgeInactive: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400',
+    borderHover: 'hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-indigo-600 dark:text-indigo-400',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-950/50',
+    iconColor: 'text-indigo-600 dark:text-indigo-400'
+  },
+  '┘┘è┘╪د┘╪ز┘ê': {
+    activeBg: 'bg-rose-600 dark:bg-rose-500 text-white shadow-lg shadow-rose-500/20 dark:shadow-none',
+    badgeActive: 'bg-rose-700/50 text-rose-100',
+    badgeInactive: 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400',
+    borderHover: 'hover:border-rose-500 hover:bg-rose-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-rose-600 dark:text-rose-400',
+    iconBg: 'bg-rose-100 dark:bg-rose-950/50',
+    iconColor: 'text-rose-600 dark:text-rose-400'
+  },
+  '╪د┘╪ح╪»╪د╪▒╪ر': {
+    activeBg: 'bg-slate-800 dark:bg-slate-700 text-white shadow-lg shadow-slate-500/20 dark:shadow-none',
+    badgeActive: 'bg-slate-900/50 text-slate-100',
+    badgeInactive: 'bg-slate-100 dark:bg-slate-900/40 text-slate-700 dark:text-slate-400',
+    borderHover: 'hover:border-slate-500 hover:bg-slate-50/30 dark:hover:bg-slate-800/30',
+    textActive: 'text-slate-850 dark:text-slate-300',
+    iconBg: 'bg-slate-200 dark:bg-slate-800/50',
+    iconColor: 'text-slate-750 dark:text-slate-400'
+  },
+  '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز': {
+    activeBg: 'bg-cyan-600 dark:bg-cyan-500 text-white shadow-lg shadow-cyan-500/20 dark:shadow-none',
+    badgeActive: 'bg-cyan-700/50 text-cyan-100',
+    badgeInactive: 'bg-cyan-50 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400',
+    borderHover: 'hover:border-cyan-500 hover:bg-cyan-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-cyan-600 dark:text-cyan-400',
+    iconBg: 'bg-cyan-100 dark:bg-cyan-950/50',
+    iconColor: 'text-cyan-600 dark:text-cyan-400'
+  },
+  '╪ذ┘è╪د┘╪د╪ز ╪د┘╪د╪ز╪╡╪د┘': {
+    activeBg: 'bg-orange-600 dark:bg-orange-500 text-white shadow-lg shadow-orange-500/20 dark:shadow-none',
+    badgeActive: 'bg-orange-700/50 text-orange-100',
+    badgeInactive: 'bg-orange-50 dark:bg-orange-950/40 text-orange-600 dark:text-orange-400',
+    borderHover: 'hover:border-orange-500 hover:bg-orange-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-orange-600 dark:text-orange-400',
+    iconBg: 'bg-orange-100 dark:bg-orange-950/50',
+    iconColor: 'text-orange-600 dark:text-orange-400'
+  },
+  stats: {
+    activeBg: 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-550/25',
+    badgeActive: 'bg-indigo-700/50 text-indigo-100',
+    badgeInactive: 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400',
+    borderHover: 'hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-indigo-600 dark:text-indigo-400',
+    iconBg: 'bg-indigo-100 dark:bg-indigo-950/50',
+    iconColor: 'text-indigo-600 dark:text-indigo-400'
+  },
+  users: {
+    activeBg: 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-555/25',
+    badgeActive: 'bg-emerald-700/50 text-emerald-100',
+    badgeInactive: 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400',
+    borderHover: 'hover:border-emerald-500 hover:bg-emerald-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-emerald-600 dark:text-emerald-400',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-950/50',
+    iconColor: 'text-emerald-600 dark:text-emerald-400'
+  },
+  hardware: {
+    activeBg: 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-550/25',
+    badgeActive: 'bg-blue-700/50 text-blue-100',
+    badgeInactive: 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400',
+    borderHover: 'hover:border-blue-500 hover:bg-blue-50/30 dark:hover:bg-slate-700/30',
+    textActive: 'text-blue-600 dark:text-blue-400',
+    iconBg: 'bg-blue-100 dark:bg-blue-950/50',
+    iconColor: 'text-blue-600 dark:text-blue-400'
+  }
+};
+
+const renderCategoryIcon = (id: string, className = "w-5 h-5") => {
+  switch (id) {
+    case 'all': return <LayoutGrid className={className} />;
+    case '┘┘┘ê╪▒┘è┘╪د': return <ShoppingBag className={className} />;
+    case '┘╪▒┘╪┤╪د┘è╪▓': return <Store className={className} />;
+    case '╪ش┘à┘╪ر': return <Layers className={className} />;
+    case '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»': return <ShieldCheck className={className} />;
+    case '╪د╪│┘â╪ز╪┤╪▒': return <Footprints className={className} />;
+    case '┘┘è┘╪د┘╪ز┘ê': return <Sparkles className={className} />;
+    case '╪د┘╪ح╪»╪د╪▒╪ر': return <Users className={className} />;
+    case '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز': return <Monitor className={className} />;
+    case 'stats': return <BarChart2 className={className} />;
+    case 'users': return <Users className={className} />;
+    case 'hardware': return <Cpu className={className} />;
+    default: return <Store className={className} />;
+  }
+};
+
+export default function AccountServersTable() {
+  const supabase = createClient();
+  const [data, setData] = useState<any[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState<boolean>(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
+  const [selectedBranch, setSelectedBranch] = useState<{ id: string | number; name: string } | null>(null);
+
+  // ╪ص╪د┘╪د╪ز ╪د┘╪ذ┘è╪د┘╪د╪ز ╪د┘╪ح╪╢╪د┘┘è╪ر (┘à╪ج╪┤╪▒╪د╪ز ┘ê╪ز┘ê╪│╪╣╪ر)
+  const [extraData, setExtraData] = useState<Record<string, { connections?: any[], computers?: any, hardware?: any }>>({});
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [isFetchingExtra, setIsFetchingExtra] = useState(false);
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleDropdownEnter = () => {
+    if (dropdownTimeout.current) clearTimeout(dropdownTimeout.current);
+    setIsDropdownOpen(true);
+  };
+
+  const handleDropdownLeave = () => {
+    dropdownTimeout.current = setTimeout(() => {
+      setIsDropdownOpen(false);
+    }, 300);
+  };
+
+  const handleSubCatClick = (id: string) => {
+    setActiveCategory(id);
+    setIsDropdownOpen(false);
+  };
+
+  // ╪ص╪د┘╪ر ╪د┘╪ز╪▒╪ز┘è╪ذ ┘┘╪ش╪»┘ê┘
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  const handleSort = (key: string) => {
+    setSortConfig(prev => {
+      if (prev && prev.key === key) {
+        return { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' };
+      }
+      return { key, direction: 'asc' };
+    });
+  };
+
+  // 1. ╪╡┘╪د╪ص┘è╪د╪ز ╪د┘┘à╪┤╪▒┘┘è┘ ┘ê╪ز╪╡┘┘è╪ر ╪د┘╪ز╪ذ┘ê┘è╪ذ╪د╪ز ┘ê╪د┘┘à╪│╪ز╪«╪»┘à ╪د┘╪ص╪د┘┘è
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [visibleCategories, setVisibleCategories] = useState<any[]>(categories);
+  const [adminUsers, setAdminUsers] = useState<any[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+
+  // 2. ╪ص╪د┘╪د╪ز ╪د┘╪ز╪ص┘â┘à ╪ذ╪ص╪░┘ ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘
+  const [userToDelete, setUserToDelete] = useState<any>(null);
+  const [showUserDeleteDialog, setShowUserDeleteDialog] = useState(false);
+  const [userDeleteError, setUserDeleteError] = useState('');
+
+  // 3. ╪ص╪د┘╪ر ╪ح╪╕┘ç╪د╪▒ ┘â╪د┘╪ر ┘â┘┘à╪د╪ز ╪د┘┘à╪▒┘ê╪▒
+  const [isAllPasswordsRevealed, setIsAllPasswordsRevealed] = useState(false);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    window.location.href = '/login';
+  };
+
+  // ╪ص╪د┘╪د╪ز ┘┘â ╪د┘╪ز╪┤┘┘è╪▒ ╪د┘┘à┘┘╪▒╪»
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [decryptionKey, setDecryptionKey] = useState('');
+  const [selectedRecordId, setSelectedRecordId] = useState<number | null>(null);
+  const [decryptedPasswords, setDecryptedPasswords] = useState<Record<number, string>>({});
+
+  // ╪ص╪د┘╪د╪ز ╪د┘╪ص╪░┘
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteKey, setDeleteKey] = useState('');
+  const [serverToDelete, setServerToDelete] = useState<any>(null);
+  const [deleteError, setDeleteError] = useState('');
+
+  // ╪ص╪د┘╪د╪ز ╪د┘╪ز┘╪ذ┘è┘ç╪د╪ز (Toast) ┘ê╪د┘╪╣╪» ╪د┘╪ز┘╪د╪▓┘┘è
+  const [toast, setToast] = useState<{ message: string, type: 'success' | 'error' } | null>(null);
+  const [countdown, setCountdown] = useState<number | null>(null);
+  const [isExiting, setIsExiting] = useState(false);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // ╪ص╪د┘╪د╪ز ╪د┘╪ز╪╣╪»┘è┘ ┘ê╪د┘╪ص╪░┘
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<any>(null);
+  const [printingRecord, setPrintingRecord] = useState<any>(null);
+  const [editForm, setEditForm] = useState({
+    ╪▒┘é┘à_╪د┘┘╪▒╪╣: '',
+    ╪د╪│┘à_╪د┘┘╪▒╪╣_ar: '',
+    ╪د╪│┘à_╪د┘┘╪▒╪╣_en: '',
+    ╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒: '',
+    ╪ذ╪د╪│┘ê┘ê╪▒╪»: '',
+    ╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒: '',
+    ╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣: '',
+    ╪╖╪د╪ذ╪╣╪ر_a4: '',
+    ╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒: '',
+    ╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣: '',
+    ╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر: '',
+    ╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è: '',
+    ╪د┘┘à┘╪╖┘é╪ر: '',
+    serial_number: '' as string | number
+  });
+
+  useEffect(() => {
+    fetchData();
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (user) {
+        setUserEmail(user.email || '');
+        
+        // ╪ش┘╪ذ ╪ذ┘è╪د┘╪د╪ز ╪د┘╪ص╪│╪د╪ذ ╪د┘╪ح╪╢╪د┘┘è╪ر ┘à┘ ╪ش╪»┘ê┘ ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘
+        const { data: profile } = await (supabase as any)
+          .from('users')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          setCurrentUser(profile);
+          const isUserAdmin = profile.role === 'admin';
+          setIsAdmin(isUserAdmin);
+
+          let allowed = profile.allowed_categories || [];
+          let filteredCats = categories;
+
+          if (isUserAdmin) {
+            // ╪ح╪╢╪د┘╪ر ╪ز╪ذ┘ê┘è╪ذ╪د╪ز ╪د┘╪ح╪»╪د╪▒╪ر ┘┘┘à╪│╪ج┘ê┘
+            const adminTabs = [
+              { id: 'stats', name: '┘┘ê╪ص╪ر ╪د┘╪ح╪ص╪╡╪د╪خ┘è╪د╪ز' },
+              { id: 'users', name: '╪ح╪»╪د╪▒╪ر ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘' },
+              { id: 'audit', name: '╪│╪ش┘ ╪د┘┘╪┤╪د╪╖╪د╪ز' },
+              { id: 'hardware', name: '╪ش╪▒╪» ╪د┘╪ث╪ش┘ç╪▓╪ر' }
+            ];
+            filteredCats = [...categories.filter(c => c.id !== '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز'), ...adminTabs, { id: '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز', name: '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز' }];
+          } else {
+            // ╪ز╪╡┘┘è╪ر ╪د┘╪ز╪ذ┘ê┘è╪ذ╪د╪ز ┘┘┘à╪│╪ز╪«╪»┘à ╪د┘╪╣╪د╪»┘è
+            const hasAll = allowed.includes('╪د┘┘â┘') || allowed.includes('all');
+            filteredCats = [...categories.filter(cat =>
+              cat.id !== '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز' && (cat.id === 'all' || hasAll || allowed.includes(cat.id))
+            ), { id: 'hardware', name: '╪ش╪▒╪» ╪د┘╪ث╪ش┘ç╪▓╪ر' }, { id: '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز', name: '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز' }];
+          }
+          setVisibleCategories(filteredCats);
+        }
+      } else {
+        window.location.href = '/login';
+      }
+    });
+  }, []);
+
+  // ╪ز╪ص╪»┘è╪س ╪ص╪د┘╪ر ╪د┘┘╪┤╪د╪╖ last_seen ┘┘┘à╪│╪ز╪«╪»┘à ╪د┘╪ص╪د┘┘è ╪»┘ê╪▒┘è╪د┘ï ┘â┘ 90 ╪س╪د┘┘è╪ر
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    
+    const updateLastSeen = async () => {
+      await (supabase as any)
+        .from('users')
+        .update({ last_seen: new Date().toISOString() })
+        .eq('id', currentUser.id);
+    };
+
+    updateLastSeen();
+    const interval = setInterval(updateLastSeen, 90000);
+    return () => clearInterval(interval);
+  }, [currentUser?.id]);
+
+  // ╪ش┘╪ذ ┘é╪د╪خ┘à╪ر ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ ┘┘┘à╪│╪ج┘ê┘
+  const fetchAdminUsers = async () => {
+    if (!isAdmin) return;
+    setIsLoadingUsers(true);
+    try {
+      const res = await fetch('/api/admin/users');
+      const json = await res.json();
+      if (json.users) {
+        setAdminUsers(json.users);
+      }
+    } catch (err) {
+      console.error('Error fetching users:', err);
+    } finally {
+      setIsLoadingUsers(false);
+    }
+  };
+
+  useEffect(() => {
+    if ((activeCategory === 'users' || activeCategory === 'stats') && isAdmin) {
+      fetchAdminUsers();
+    }
+  }, [activeCategory, isAdmin]);
+
+  // ╪ز╪ص╪»┘è╪س ╪ص╪د┘╪ر ┘ê╪╡┘╪د╪ص┘è╪د╪ز ┘à╪│╪ز╪«╪»┘à ┘à┘ ┘é╪ذ┘ ╪د┘┘à╪»┘è╪▒
+  const updateUserStatus = async (user: any, updates: Partial<any>) => {
+    try {
+      const updatedPayload = {
+        userId: user.id,
+        role: updates.role !== undefined ? updates.role : user.role,
+        is_active: updates.is_active !== undefined ? updates.is_active : user.is_active,
+        is_trusted: updates.is_trusted !== undefined ? updates.is_trusted : user.is_trusted,
+        allowed_categories: updates.allowed_categories !== undefined ? updates.allowed_categories : user.allowed_categories,
+      };
+
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPayload)
+      });
+
+      const resJson = await res.json();
+      if (resJson.success) {
+        showToast('╪ز┘à ╪ز╪ص╪»┘è╪س ╪╡┘╪د╪ص┘è╪د╪ز ╪د┘┘à╪│╪ز╪«╪»┘à ╪ذ┘╪ش╪د╪ص');
+        
+        // ╪ز╪ص╪»┘è╪س ╪د┘┘é╪د╪خ┘à╪ر ┘à╪ص┘┘è╪د┘ï
+        setAdminUsers((prev: any) => prev.map((u: any) => u.id === user.id ? { ...u, ...updates } : u));
+        
+        if (user.id === currentUser?.id) {
+          setCurrentUser((prev: any) => ({ ...prev, ...updates }));
+          if (updates.role !== undefined) {
+            setIsAdmin(updates.role === 'admin');
+          }
+        }
+      } else {
+        showToast(resJson.error || '┘╪┤┘ ╪ز╪ص╪»┘è╪س ╪د┘╪╡┘╪د╪ص┘è╪د╪ز', 'error');
+      }
+    } catch (err) {
+      showToast('╪ص╪»╪س ╪«╪╖╪ث ╪║┘è╪▒ ┘à╪ز┘ê┘é╪╣', 'error');
+    }
+  };
+
+  const handleToggleCategory = (user: any, catId: string) => {
+    let currentAllowed = [...(user.allowed_categories || [])];
+    if (currentAllowed.includes(catId)) {
+      currentAllowed = currentAllowed.filter(c => c !== catId);
+    } else {
+      currentAllowed.push(catId);
+    }
+    updateUserStatus(user, { allowed_categories: currentAllowed });
+  };
+
+  const handleUserDeleteClick = (user: any) => {
+    setUserToDelete(user);
+    setShowUserDeleteDialog(true);
+    setUserDeleteError('');
+  };
+
+  const confirmUserDelete = async () => {
+    if (!userToDelete) return;
+    try {
+      const res = await fetch(`/api/admin/users?userId=${userToDelete.id}`, {
+        method: 'DELETE'
+      });
+      const dataJson = await res.json();
+      if (dataJson.success) {
+        showToast('╪ز┘à ╪ص╪░┘ ╪د┘┘à╪│╪ز╪«╪»┘à ╪ذ┘╪ش╪د╪ص ┘à┘ ╪د┘┘╪╕╪د┘à');
+        setShowUserDeleteDialog(false);
+        setUserToDelete(null);
+        fetchAdminUsers();
+      } else {
+        setUserDeleteError(dataJson.error || '┘╪┤┘ ╪ص╪░┘ ╪د┘┘à╪│╪ز╪«╪»┘à');
+      }
+    } catch (err) {
+      setUserDeleteError('╪ص╪»╪س ╪«╪╖╪ث ╪║┘è╪▒ ┘à╪ز┘ê┘é╪╣ ╪ث╪س┘╪د╪ة ╪د┘╪ص╪░┘');
+    }
+  };
+
+  // ╪ح╪╕┘ç╪د╪▒ ┘ê╪ح╪«┘╪د╪ة ┘â┘┘à╪د╪ز ╪د┘┘à╪▒┘ê╪▒ ╪د┘╪ش┘à╪د╪╣┘è ┘┘┘à╪»┘è╪▒ ╪ذ╪╢╪║╪╖╪ر ┘ê╪د╪ص╪»╪ر (╪»┘ê┘ ┘â┘┘à╪ر ╪│╪▒)
+  const toggleAllPasswords = () => {
+    if (isAllPasswordsRevealed) {
+      setDecryptedPasswords({});
+      setIsAllPasswordsRevealed(false);
+    } else {
+      const decrypted: Record<number, string> = {};
+      data.forEach((record: any) => {
+        try {
+          const bytes = CryptoJS.AES.decrypt(record.╪ذ╪د╪│┘ê┘ê╪▒╪», 'sols');
+          const originalText = bytes.toString(CryptoJS.enc.Utf8);
+          if (originalText) {
+            decrypted[record.id] = originalText;
+          }
+        } catch (e) {
+          console.error(`Failed to decrypt password for branch ${record.╪▒┘é┘à_╪د┘┘╪▒╪╣}:`, e);
+        }
+      });
+      setDecryptedPasswords(decrypted);
+      setIsAllPasswordsRevealed(true);
+    }
+  };
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('success') === 'added') {
+      showToast('╪ز┘à ╪ح╪╢╪د┘╪ر ╪د┘┘╪▒╪╣ ╪د┘╪ش╪»┘è╪» ╪ذ┘╪ش╪د╪ص');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  // ╪ح╪«┘╪د╪ة ╪د┘╪ذ╪د╪│┘ê┘ê╪▒╪» ┘┘è ╪ص╪د┘ ╪د┘╪╢╪║╪╖ ┘┘è ╪ث┘è ┘à┘â╪د┘ ╪ت╪«╪▒ ╪ذ╪د┘╪╡┘╪ص╪ر (┘┘é╪╖ ╪╣┘╪» ╪د┘╪╣╪▒╪╢ ╪د┘┘╪▒╪»┘è)
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (!isAllPasswordsRevealed) {
+        setDecryptedPasswords({});
+      }
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => {
+      window.removeEventListener('click', handleGlobalClick);
+    };
+  }, [isAllPasswordsRevealed]);
+
+  const copyToClipboard = (text: string) => {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text);
+    } else {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.setAttribute('readonly', '');
+      el.style.position = 'absolute';
+      el.style.left = '-9999px';
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    showToast('╪ز┘à ┘╪│╪« ┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒ ┘┘┘à╪ص╪د┘╪╕╪ر');
+  };
+
+  const fetchData = async () => {
+    setIsLoadingData(true);
+    const { data: records, error } = await (supabase as any)
+      .from('server_data')
+      .select('*')
+      .order('id', { ascending: false });
+
+    if (records) setData(records);
+    if (error) console.error("Error fetching data:", error);
+    setIsLoadingData(false);
+  };
+
+  // ╪ش┘╪ذ ╪د┘╪ذ┘è╪د┘╪د╪ز ╪د┘╪ح╪╢╪د┘┘è╪ر ┘┘è ╪د┘╪«┘┘┘è╪ر
+  const fetchExtraData = async () => {
+    if (data.length === 0) return;
+    setIsFetchingExtra(true);
+    try {
+      // Fetch branch connections
+      const { data: conns } = await (supabase as any).from('branch_connections').select('*');
+      
+      // Fetch computers
+      const compRes = await fetch('/api/computers-inventory');
+      const compData = await compRes.json();
+      
+      // Fetch hardware
+      const hardRes = await fetch('/api/hardware-inventory');
+      const hardData = await hardRes.json();
+
+      const newExtra: Record<string, any> = {};
+      data.forEach(row => {
+        const branchIdStr = String(row.╪▒┘é┘à_╪د┘┘╪▒╪╣).trim();
+        const branchConns = conns?.filter((c: any) => String(c.branch_id).trim() === branchIdStr) || [];
+        
+        // Find computer
+        let comp = null;
+        if (compData.success && compData.data) {
+           comp = compData.data.find((c: any) => String(c['╪▒┘é┘à ╪د┘┘╪▒╪╣'] || c['╪د┘┘╪▒╪╣']).trim() === branchIdStr);
+        }
+
+        // Find hardware
+        let hard = null;
+        if (hardData.success && hardData.data) {
+           const targetName = String(row.╪د╪│┘à_╪د┘┘╪▒╪╣_ar || '').trim().toLowerCase();
+           const targetId = String(row.╪▒┘é┘à_╪د┘┘╪▒╪╣ || '').trim().toLowerCase();
+           
+           hard = hardData.data.find((h: any) => {
+             const cellBranch = String(h['╪د┘┘╪▒╪╣'] || h['╪▒┘é┘à ╪د┘┘╪▒╪╣'] || '').trim().toLowerCase();
+             if (!cellBranch) return false;
+             return (targetName && (cellBranch.includes(targetName) || targetName.includes(cellBranch))) || 
+                    (cellBranch === targetId);
+           });
+        }
+
+        newExtra[branchIdStr] = {
+          connections: branchConns.length > 0 ? branchConns : undefined,
+          computers: comp,
+          hardware: hard
+        };
+      });
+
+      setExtraData(newExtra);
+    } catch (err) {
+      console.error('Error fetching extra data:', err);
+    } finally {
+      setIsFetchingExtra(false);
+    }
+  };
+
+  useEffect(() => {
+    if (data.length > 0) {
+      fetchExtraData();
+    }
+  }, [data]);
+
+  const toggleRowExpansion = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleEditClick = (record: any) => {
+    setEditingRecord(record);
+    setEditForm({
+      ╪▒┘é┘à_╪د┘┘╪▒╪╣: record.╪▒┘é┘à_╪د┘┘╪▒╪╣,
+      ╪د╪│┘à_╪د┘┘╪▒╪╣_ar: record.╪د╪│┘à_╪د┘┘╪▒╪╣_ar,
+      ╪د╪│┘à_╪د┘┘╪▒╪╣_en: record.╪د╪│┘à_╪د┘┘╪▒╪╣_en,
+      ╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒: record.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒,
+      ╪ذ╪د╪│┘ê┘ê╪▒╪»: '',
+      ╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒: record.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒,
+      ╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣: record.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || '┘┘┘ê╪▒┘è┘╪د',
+      ╪╖╪د╪ذ╪╣╪ر_a4: record.╪╖╪د╪ذ╪╣╪ر_a4 || '',
+      ╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒: record.╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒ || '',
+      ╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣: record.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣ || '',
+      ╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر: record.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر || '',
+      ╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è: record.╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è || '',
+      ╪د┘┘à┘╪╖┘é╪ر: record.╪د┘┘à┘╪╖┘é╪ر || '',
+      serial_number: record.serial_number ?? ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      let updatedData: any = {
+        ╪▒┘é┘à_╪د┘┘╪▒╪╣: editForm.╪▒┘é┘à_╪د┘┘╪▒╪╣,
+        ╪د╪│┘à_╪د┘┘╪▒╪╣_ar: editForm.╪د╪│┘à_╪د┘┘╪▒╪╣_ar,
+        ╪د╪│┘à_╪د┘┘╪▒╪╣_en: editForm.╪د╪│┘à_╪د┘┘╪▒╪╣_en.toUpperCase(),
+        ╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒: editForm.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒,
+        ╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒: editForm.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒,
+        ╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣: editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣,
+        ╪╖╪د╪ذ╪╣╪ر_a4: editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪د┘╪ح╪»╪د╪▒╪ر' ? null : (editForm.╪╖╪د╪ذ╪╣╪ر_a4 || null),
+        ╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒: editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪د┘╪ح╪»╪د╪▒╪ر' ? null : (editForm.╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒ || null),
+        ╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣: editForm.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣ || null,
+        ╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر: editForm.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر || null,
+        ╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è: editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪د┘╪ح╪»╪د╪▒╪ر' ? null : (editForm.╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è || null),
+        ╪د┘┘à┘╪╖┘é╪ر: editForm.╪د┘┘à┘╪╖┘é╪ر || null,
+        serial_number: editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪د┘╪ح╪»╪د╪▒╪ر' ? null : (parseInt(String(editForm.serial_number)) || null)
+      };
+
+      if (editForm.╪ذ╪د╪│┘ê┘ê╪▒╪».trim() !== '') {
+        updatedData.╪ذ╪د╪│┘ê┘ê╪▒╪» = CryptoJS.AES.encrypt(editForm.╪ذ╪د╪│┘ê┘ê╪▒╪», 'sols').toString();
+      }
+
+      const { error } = await (supabase as any)
+        .from('server_data')
+        .update(updatedData)
+        .eq('id', editingRecord.id);
+
+      if (error) throw error;
+
+      setShowEditModal(false);
+      fetchData();
+      showToast('╪ز┘à ╪ز╪ص╪»┘è╪س ╪ذ┘è╪د┘╪د╪ز ╪د┘┘╪▒╪╣ ╪ذ┘╪ش╪د╪ص');
+    } catch (error: any) {
+      alert('╪ص╪»╪س ╪«╪╖╪ث ╪ث╪س┘╪د╪ة ╪د┘╪ز╪╣╪»┘è┘: ' + error.message);
+    }
+  };
+
+  const handleShowPassword = (id: number) => {
+    setSelectedRecordId(id);
+    setShowPasswordDialog(true);
+    setDecryptionKey('');
+  };
+
+  const handleDeleteClick = (server: any) => {
+    setServerToDelete(server);
+    setShowDeleteDialog(true);
+    setDeleteKey('');
+    setDeleteError('');
+  };
+
+  const confirmDelete = async () => {
+    if (deleteKey !== 'sols') {
+      setDeleteError('┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒ ╪║┘è╪▒ ╪╡╪ص┘è╪ص╪ر');
+      return;
+    }
+
+    try {
+      const { error } = await (supabase as any)
+        .from('server_data')
+        .delete()
+        .eq('id', serverToDelete.id);
+
+      if (error) throw error;
+
+      setData(data.filter(s => s.id !== serverToDelete.id));
+      setShowDeleteDialog(false);
+      setServerToDelete(null);
+      showToast('╪ز┘à ╪ص╪░┘ ╪د┘┘╪▒╪╣ ╪ذ┘╪ش╪د╪ص');
+    } catch (err: any) {
+      setDeleteError(err.message);
+    }
+  };
+
+  const submitDecryption = () => {
+    if (decryptionKey !== 'sols') {
+      alert('┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒ ╪║┘è╪▒ ╪╡╪ص┘è╪ص╪ر');
+      return;
+    }
+
+    const record = data.find(r => r.id === selectedRecordId);
+    if (record) {
+      try {
+        const bytes = CryptoJS.AES.decrypt(record.╪ذ╪د╪│┘ê┘ê╪▒╪», 'sols');
+        const originalText = bytes.toString(CryptoJS.enc.Utf8);
+
+        if (!originalText) throw new Error('┘╪┤┘ ┘┘â ╪د┘╪ز╪┤┘┘è╪▒');
+
+        setDecryptedPasswords({ [selectedRecordId!]: originalText });
+        setShowPasswordDialog(false);
+
+        setCountdown(5);
+        setIsExiting(false);
+        const timer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev !== null && prev <= 1) {
+              clearInterval(timer);
+              setDecryptedPasswords({});
+              setIsExiting(true);
+              setTimeout(() => {
+                setCountdown(null);
+                setIsExiting(false);
+              }, 1000);
+              return 0;
+            }
+            return prev !== null ? prev - 1 : null;
+          });
+        }, 1000);
+      } catch (e) {
+        alert('╪ص╪»╪س ╪«╪╖╪ث ╪ث╪س┘╪د╪ة ┘┘â ╪د┘╪ز╪┤┘┘è╪▒');
+      }
+    }
+  };
+
+  const exportToCSV = () => {
+    const headers = ['ID', '╪▒┘é┘à ╪د┘┘╪▒╪╣', '╪د╪│┘à ╪د┘┘╪▒╪╣ AR', '╪د╪│┘à ╪د┘┘╪▒╪╣ EN', '╪د╪│┘à ╪د┘┘è┘ê╪▓╪▒', '╪د┘╪ص╪د┘╪ر', '╪ز╪د╪▒┘è╪« ╪د┘╪د┘╪┤╪د╪ة'];
+    const rows = data.map(r => [
+      r.id, r.╪▒┘é┘à_╪د┘┘╪▒╪╣, r.╪د╪│┘à_╪د┘┘╪▒╪╣_ar, r.╪د╪│┘à_╪د┘┘╪▒╪╣_en, r.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒, r.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒, r.╪ز╪د╪▒┘è╪«_╪د┘╪د┘╪┤╪د╪ة
+    ]);
+
+    const csvContent = "data:text/csv;charset=utf-8,\uFEFF"
+      + [headers.join(','), ...rows.map(e => e.join(','))].join('\n');
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "servers_data.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handlePrint = (record: any) => {
+    const supportedCategories = ['┘╪▒┘╪┤╪د┘è╪▓', '┘┘è┘╪د┘╪ز┘ê', '┘┘┘ê╪▒┘è┘╪د', '╪ش┘à┘╪ر', '╪د╪│┘â╪ز╪┤╪▒', '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»'];
+    if (supportedCategories.includes(record.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣)) {
+      setPrintingRecord(record);
+      setTimeout(() => {
+        window.print();
+        setPrintingRecord(null);
+      }, 500);
+    } else {
+      alert('╪│┘è╪ز┘à ╪ز╪▓┘ê┘è╪» ╪ذ┘è╪د┘╪د╪ز ╪د┘╪╖╪ذ╪د╪╣╪ر ┘┘ç╪░╪د ╪د┘╪ز╪╡┘┘è┘ ┘╪د╪ص┘é╪د┘ï');
+    }
+  };
+
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // ╪ح╪ص╪╡╪د╪خ┘è╪د╪ز ╪د┘┘╪▒┘ê╪╣ ╪د┘┘à╪╖╪د╪ذ┘é╪ر
+  const stats = data.reduce((acc: any, curr: any) => {
+    acc[curr.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒] = (acc[curr.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒] || 0) + 1;
+    return acc;
+  }, {});
+
+  const categoryCounts = (() => {
+    const counts: Record<string, number> = { all: 0 };
+    categories.forEach(cat => {
+      if (cat.id !== 'all') counts[cat.id] = 0;
+    });
+
+    data.forEach(r => {
+      const matchesSearch =
+        String(r.╪▒┘é┘à_╪د┘┘╪▒╪╣ || '').toLowerCase().includes(search.toLowerCase()) ||
+        String(r.╪د╪│┘à_╪د┘┘╪▒╪╣_ar || '').includes(search) ||
+        String(r.╪د╪│┘à_╪د┘┘╪▒╪╣_en || '').toLowerCase().includes(search.toLowerCase()) ||
+        String(r.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || '').includes(search) ||
+        String(r.╪د┘┘à┘╪╖┘é╪ر || '').includes(search) ||
+        String(r.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر || '').includes(search);
+
+      const matchesStatus = !statusFilter || r.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === statusFilter;
+
+      let matchesDate = true;
+      if (startDate || endDate) {
+        const createdDate = new Date(r.╪ز╪د╪▒┘è╪«_╪د┘╪د┘╪┤╪د╪ة);
+        if (startDate && createdDate < new Date(startDate)) matchesDate = false;
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setDate(end.getDate() + 1);
+          if (createdDate > end) matchesDate = false;
+        }
+      }
+
+      if (matchesSearch && matchesStatus && matchesDate) {
+        counts.all++;
+        const cat = r.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣;
+        if (cat && cat in counts) {
+          counts[cat]++;
+        }
+      }
+    });
+
+    return counts;
+  })();
+
+  const filteredData = data.filter(r => {
+    // ╪ز╪╡┘┘è╪ر ╪ث┘à┘┘è╪ر ┘┘┘à╪│╪ز╪«╪»┘à ╪د┘╪╣╪د╪»┘è ┘┘à┘╪╣┘ç ┘à┘ ╪▒╪ج┘è╪ر ┘╪▒┘ê╪╣ ╪║┘è╪▒ ┘à╪│┘à┘ê╪ص ┘┘ç ╪ذ┘ç╪د ╪ص╪ز┘ë ┘┘ê ┘â╪د┘ ╪د┘╪ز╪ذ┘ê┘è╪ذ "╪د┘┘â┘" ┘╪┤╪╖╪د┘ï
+    if (!isAdmin) {
+      if (!currentUser) return false; // ╪╣╪»┘à ╪ح╪╕┘ç╪د╪▒ ╪د┘╪ذ┘è╪د┘╪د╪ز ╪ح╪░╪د ┘┘à ╪ز┘â╪ز┘à┘ ╪ذ┘è╪د┘╪د╪ز ╪د┘┘à╪│╪ز╪«╪»┘à
+      const allowed = currentUser?.allowed_categories || [];
+      const hasAll = allowed.includes('╪د┘┘â┘') || allowed.includes('all');
+      const branchCategory = r.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || '┘┘┘ê╪▒┘è┘╪د'; // ╪د┘╪د┘╪ز╪▒╪د╪╢┘è ╪ح╪░╪د ┘â╪د┘ ╪د┘╪ز╪╡┘┘è┘ ┘╪د╪▒╪║╪د┘ï
+      if (!hasAll && !allowed.includes(branchCategory) && branchCategory !== '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز') {
+        return false;
+      }
+    }
+
+    if (activeCategory && r.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ !== activeCategory) return false;
+
+    const matchesSearch =
+      String(r.╪▒┘é┘à_╪د┘┘╪▒╪╣ || '').toLowerCase().includes(search.toLowerCase()) ||
+      String(r.╪د╪│┘à_╪د┘┘╪▒╪╣_ar || '').includes(search) ||
+      String(r.╪د╪│┘à_╪د┘┘╪▒╪╣_en || '').toLowerCase().includes(search.toLowerCase()) ||
+      String(r.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || '').includes(search) ||
+      String(r.╪د┘┘à┘╪╖┘é╪ر || '').includes(search) ||
+      String(r.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر || '').includes(search);
+
+    if (!matchesSearch) return false;
+
+    if (statusFilter && r.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ !== statusFilter) return false;
+
+    if (startDate || endDate) {
+      const createdDate = new Date(r.╪ز╪د╪▒┘è╪«_╪د┘╪د┘╪┤╪د╪ة);
+      if (startDate && createdDate < new Date(startDate)) return false;
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setDate(end.getDate() + 1);
+        if (createdDate > end) return false;
+      }
+    }
+
+    return true;
+  });
+
+  // ╪ز╪╖╪ذ┘è┘é ╪د┘╪ز╪▒╪ز┘è╪ذ ╪╣┘┘ë ╪د┘╪ذ┘è╪د┘╪د╪ز ╪د┘┘à┘┘╪ز╪▒╪ر
+  const sortedData = sortConfig
+    ? [...filteredData].sort((a, b) => {
+        let aVal: any;
+        let bVal: any;
+        switch (sortConfig.key) {
+          case '╪▒┘é┘à_╪د┘┘╪▒╪╣':
+            aVal = Number(a.╪▒┘é┘à_╪د┘┘╪▒╪╣) || 0;
+            bVal = Number(b.╪▒┘é┘à_╪د┘┘╪▒╪╣) || 0;
+            break;
+          case '╪د╪│┘à_╪د┘┘╪▒╪╣_ar':
+            aVal = String(a.╪د╪│┘à_╪د┘┘╪▒╪╣_ar || '');
+            bVal = String(b.╪د╪│┘à_╪د┘┘╪▒╪╣_ar || '');
+            break;
+          case '╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣':
+            aVal = String(a.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || '');
+            bVal = String(b.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || '');
+            break;
+          case '╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒':
+            aVal = String(a.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒ || '');
+            bVal = String(b.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒ || '');
+            break;
+          case '╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒':
+            aVal = String(a.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ || '');
+            bVal = String(b.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ || '');
+            break;
+          case 'serial_number':
+            aVal = Number(a.serial_number) || 0;
+            bVal = Number(b.serial_number) || 0;
+            break;
+          default:
+            return 0;
+        }
+        if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+        return 0;
+      })
+    : filteredData;
+
+  // ╪ص╪│╪د╪ذ ╪ح╪ص╪╡╪د╪خ┘è╪د╪ز ┘┘ê╪ص╪ر ╪د┘╪ز╪ص┘â┘à
+  const totalServers = data.length;
+  const activeServers = data.filter(r => r.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘è╪╣┘à┘').length;
+  const openingSoonServers = data.filter(r => r.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د').length;
+  const closedTempServers = data.filter(r => r.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘à╪║┘┘é ┘à╪ج┘é╪ز╪د').length;
+  const closedPermServers = data.filter(r => r.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï').length;
+
+  const activePercent = totalServers ? Math.round((activeServers / totalServers) * 100) : 0;
+  const openingPercent = totalServers ? Math.round((openingSoonServers / totalServers) * 100) : 0;
+
+  const categoryCountsData = data.reduce((acc: Record<string, number>, curr: any) => {
+    if (curr.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣) {
+      acc[curr.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣] = (acc[curr.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  // ╪┤╪د╪┤╪ر ╪د┘╪ص╪ش╪ذ ┘ê╪د┘╪ص╪╕╪▒ ╪د┘╪ث┘┘è┘é╪ر ┘┘┘à╪│╪ز╪«╪»┘à ╪د┘┘à┘ê┘é┘ê┘
+  if (currentUser && currentUser.is_active === false) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-100 to-gray-200 dark:from-slate-950 dark:to-slate-900 p-4 font-sans" dir="rtl">
+        <div className="w-full max-w-md bg-white/80 dark:bg-slate-850/80 backdrop-blur-md rounded-2xl border border-red-150 dark:border-red-950/30 p-8 shadow-2xl text-center space-y-6 transform transition-all duration-300 hover:scale-[1.01]">
+          <div className="flex justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 bg-red-500/20 rounded-full blur-xl animate-pulse"></div>
+              <div className="relative bg-red-50 dark:bg-red-950/40 p-5 rounded-full border border-red-100 dark:border-red-900/30 text-red-650 dark:text-red-500 shadow-inner">
+                <AlertTriangle className="w-12 h-12 animate-bounce" />
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-2xl font-extrabold text-red-700 dark:text-red-400">╪ص╪│╪د╪ذ┘â ╪║┘è╪▒ ┘╪┤╪╖</h2>
+            <p className="text-sm font-medium text-gray-600 dark:text-slate-350 leading-relaxed">
+              ┘┘é╪» ╪ز┘à ╪ح┘è┘é╪د┘ ╪ز┘╪┤┘è╪╖ ╪ص╪│╪د╪ذ┘â ┘à╪ج┘é╪ز╪د┘ï ┘à┘ ┘é╪ذ┘ ╪ح╪»╪د╪▒╪ر ╪د┘┘╪╕╪د┘à. ┘è╪▒╪ش┘ë ╪د┘╪ز┘ê╪د╪╡┘ ┘à╪╣ ╪د┘┘à╪»┘è╪▒ ╪د┘┘à╪│╪ج┘ê┘ ┘╪ز┘╪╣┘è┘ ╪ص╪│╪د╪ذ┘â ┘à╪ش╪»╪»╪د┘ï.
+            </p>
+          </div>
+
+          <div className="bg-red-50/50 dark:bg-red-950/10 rounded-xl p-4 border border-red-150/40 dark:border-red-900/20 text-xs font-bold text-red-650 dark:text-red-400 font-mono">
+            ╪د┘╪ذ╪▒┘è╪» ╪د┘╪ح┘┘â╪ز╪▒┘ê┘┘è: {userEmail}
+          </div>
+
+          <button
+            onClick={handleSignOut}
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-300 shadow-md shadow-red-500/20 hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer active:scale-95 font-sans"
+          >
+            <span>╪ز╪│╪ش┘è┘ ╪د┘╪«╪▒┘ê╪ش ┘ê╪د┘╪▒╪ش┘ê╪╣</span>
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-3 font-sans bg-gray-100 dark:bg-slate-900 min-h-screen text-gray-900 dark:text-slate-100 transition-colors duration-300" dir="rtl">
+      <div className="w-full mx-auto">
+        <div className="w-full md:max-w-[996px] bg-white dark:bg-slate-800 px-4 py-2.5 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-2 flex items-center justify-start">
+          <h1 className="text-2xl font-extrabold font-sans text-indigo-850 dark:text-amber-300">
+            ╪ذ┘è╪د┘╪د╪ز ╪د┘╪│┘è╪▒┘╪▒
+          </h1>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-3 items-start">
+
+          {/* ╪د┘┘é╪د╪خ┘à╪ر ╪د┘╪ش╪د┘╪ذ┘è╪ر ┘┘╪ز╪╡┘┘è┘╪د╪ز ┘ê┘┘ê╪ص╪د╪ز ╪د┘┘à╪│╪ج┘ê┘ */}
+          <div className="w-full lg:w-64 shrink-0 bg-white dark:bg-slate-800 px-0 py-4 rounded-sm border border-gray-200 dark:border-slate-700 lg:sticky lg:top-4 lg:h-[calc(100vh-80px)] flex flex-col justify-between shadow-sm overflow-visible z-[100] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            <div>
+              <h2 className="hidden lg:flex text-sm font-bold text-gray-800 dark:text-slate-200 mb-2 pb-2 border-b border-gray-200 dark:border-slate-700 items-center gap-1.5 px-4">
+                <Layers className="w-4 h-4 text-indigo-650 dark:text-indigo-450" />
+                ╪د┘┘é╪د╪خ┘à╪ر ┘ê╪د┘╪ث┘é╪│╪د┘à
+              </h2>
+
+              <div className="flex flex-row overflow-visible lg:flex-col gap-0 pb-0 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                {visibleCategories.map((cat) => {
+                  const isActive = activeCategory === (cat.id === 'all' ? null : cat.id);
+                  const theme = categoryThemes[cat.id] || categoryThemes.all;
+                  const count = categoryCounts[cat.id];
+                  const subCategoriesList = ['┘┘┘ê╪▒┘è┘╪د', '┘╪▒┘╪┤╪د┘è╪▓', '╪ش┘à┘╪ر', '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»', '╪د╪│┘â╪ز╪┤╪▒', '┘┘è┘╪د┘╪ز┘ê', '╪د┘╪ح╪»╪د╪▒╪ر'];
+
+                  const renderButton = (c: any, isSub: boolean = false, onClickOverride: any = null) => {
+                    const isCActive = activeCategory === (c.id === 'all' ? null : c.id);
+                    const cTheme = categoryThemes[c.id] || categoryThemes.all;
+                    const cCount = categoryCounts[c.id];
+                    return (
+                      <button
+                        onClick={onClickOverride ? onClickOverride : () => setActiveCategory(c.id === 'all' ? null : c.id)}
+                        className={`group flex items-center justify-between gap-2.5 px-3 py-1.5 border-b text-base font-bold transition-all duration-300 cursor-pointer whitespace-nowrap shrink-0 lg:w-full active:scale-[0.99] ${isCActive
+                          ? cTheme.activeBg + ' text-white border-transparent shadow-inner'
+                          : 'border-gray-100 dark:border-slate-700/50 text-gray-700 dark:text-slate-200 bg-transparent hover:bg-gray-50 dark:hover:bg-slate-800/80'
+                          } ${isSub ? 'border-none hover:bg-gray-100 dark:hover:bg-slate-700' : ''}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className={`p-1.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isCActive ? 'bg-white/20 text-white' : cTheme.iconBg + ' ' + cTheme.iconColor}`}>
+                            {renderCategoryIcon(c.id, "w-4 h-4")}
+                          </span>
+                          <span className="transition-transform duration-300 group-hover:translate-x-[-3px]">
+                            {c.name}
+                          </span>
+                        </div>
+
+                        {c.id !== 'stats' && c.id !== 'users' && c.id !== 'audit' ? (
+                          <span className={`text-xs font-black px-2 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isCActive ? cTheme.badgeActive : cTheme.badgeInactive}`}>
+                            {cCount}
+                          </span>
+                        ) : (
+                          <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded-sm transition-transform duration-300 group-hover:scale-105 ${isCActive ? 'bg-white/20 text-white' : 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400'}`}>
+                            ╪ح╪»╪د╪▒╪ر
+                          </span>
+                        )}
+                      </button>
+                    );
+                  };
+
+                  if (subCategoriesList.includes(cat.id)) return null;
+
+                  if (cat.id === 'all') {
+                    const dropdownCats = visibleCategories.filter(c => subCategoriesList.includes(c.id));
+                    return (
+                      <div 
+                        key={cat.id} 
+                        className="relative shrink-0 z-[110]"
+                        onMouseEnter={handleDropdownEnter}
+                        onMouseLeave={handleDropdownLeave}
+                      >
+                        {renderButton(cat)}
+                        {dropdownCats.length > 0 && (
+                          <div className={`absolute top-full right-0 lg:top-0 lg:right-full lg:mr-2 w-56 transition-all duration-300 ${isDropdownOpen ? 'visible opacity-100 translate-y-0 lg:translate-x-0 pointer-events-auto' : 'invisible opacity-0 translate-y-2 lg:translate-y-0 lg:translate-x-2 pointer-events-none'}`}>
+                            <div className="bg-white dark:bg-slate-800 rounded-md shadow-xl border border-gray-200 dark:border-slate-700 py-1 flex flex-col gap-0">
+                              {dropdownCats.map(subCat => (
+                                <div key={subCat.id} className="shrink-0 w-full">
+                                  {renderButton(subCat, true, () => handleSubCatClick(subCat.id))}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div key={cat.id} className="shrink-0">
+                      {renderButton(cat)}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ╪د┘╪ش╪▓╪ة ╪د┘╪│┘┘┘è ┘à┘ ╪د┘┘é╪د╪خ┘à╪ر - ╪د┘┘à╪│╪ز╪«╪»┘à ┘ê╪ز╪│╪ش┘è┘ ╪د┘╪«╪▒┘ê╪ش */}
+            <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700/60 flex flex-col gap-2.5 px-2.5">
+              <div className="flex items-center gap-2.5 px-1 py-0.5">
+                <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center text-indigo-700 dark:text-indigo-400 font-bold text-sm shrink-0 shadow-inner">
+                  {userEmail ? userEmail.substring(0, 2).toUpperCase() : 'U'}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-extrabold text-gray-800 dark:text-slate-200 truncate flex items-center gap-1">
+                    {userEmail ? userEmail.split('@')[0] : '┘à╪│╪ز╪«╪»┘à ╪│┘è╪▒┘╪▒'}
+                    {isAdmin && <span className="bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-400 px-1 rounded-sm text-[8px] font-extrabold">┘à╪»┘è╪▒</span>}
+                  </span>
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 truncate">
+                    {userEmail || 'user@server.com'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <Link
+                  href="/account/settings"
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-bold text-gray-700 dark:text-slate-300 hover:bg-gray-150 dark:hover:bg-slate-700/50 transition-colors cursor-pointer"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-gray-500 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span>╪د┘╪د╪╣╪»╪د╪»╪د╪ز</span>
+                </Link>
+
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-sm text-xs font-bold text-red-650 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer w-full text-right"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4 text-red-500 dark:text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>╪ز╪│╪ش┘è┘ ╪د┘╪«╪▒┘ê╪ش</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ┘à╪ص╪ز┘ê┘ë ╪د┘╪╡┘╪ص╪ر ╪د┘╪▒╪خ┘è╪│┘è */}
+          <div className="flex-1 min-w-0 w-full">
+
+            {/* ╪│╪ش┘ ╪د┘┘╪┤╪د╪╖╪د╪ز */}
+            {activeCategory === 'audit' && (
+              <div className="w-full md:max-w-[996px] animate-fade-in">
+                <AuditLogsViewer />
+              </div>
+            )}
+
+            {/* ╪ث┘ê┘╪د┘ï: ┘┘è ╪ص╪د┘ ╪ز┘╪╣┘è┘ ╪ز╪ذ┘ê┘è╪ذ ╪د┘╪ح╪ص╪╡╪د╪خ┘è╪د╪ز ╪د┘╪ح╪»╪د╪▒┘è╪ر */}
+            {activeCategory === 'stats' && (
+              <div className="w-full md:max-w-[996px] space-y-4 animate-fade-in">
+                {/* ╪┤╪▒┘è╪╖ ╪╣┘┘ê╪د┘ ╪د┘╪ح╪ص╪╡╪د╪خ┘è╪د╪ز */}
+                <div className="w-fit max-w-full bg-white dark:bg-slate-800 p-2 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-3 flex flex-row flex-nowrap gap-3 items-center justify-start overflow-x-auto overflow-y-hidden custom-scrollbar">
+                  <div className="flex items-center gap-2 shrink-0 h-[34px] px-2 border-l-2 border-indigo-500">
+                    <BarChart2 className="w-5 h-5 text-indigo-500" />
+                    <span className="text-sm font-bold text-gray-800 dark:text-slate-200 whitespace-nowrap">┘┘ê╪ص╪ر ╪د┘╪ح╪ص╪╡╪د╪خ┘è╪د╪ز ┘ê╪د┘╪ز┘é╪د╪▒┘è╪▒</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0 h-[34px] bg-green-50 dark:bg-green-900/20 px-2.5 rounded-sm border border-green-200 dark:border-green-800/50">
+                    <Activity className="w-3.5 h-3.5 text-green-600 dark:text-green-400 animate-pulse" />
+                    <span className="text-[10px] font-bold text-green-700 dark:text-green-400 whitespace-nowrap">╪ز╪ص╪»┘è╪س ┘┘ê╪▒┘è ┘╪┤╪╖</span>
+                  </div>
+                </div>
+
+                {/* ┘â╪▒┘ê╪ز ╪د┘┘à╪ج╪┤╪▒╪د╪ز ╪د┘┘┘ê╪▒┘è╪ر */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-gray-150 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-500 dark:text-slate-400">╪ح╪ش┘à╪د┘┘è ╪د┘┘╪▒┘ê╪╣</span>
+                      <div className="p-2 bg-indigo-50 dark:bg-indigo-950/40 text-indigo-650 dark:text-indigo-400 rounded-xl">
+                        <Store className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-3xl font-black font-sans">{totalServers}</div>
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500 font-semibold">╪│┘è╪▒┘╪▒ ┘à╪│╪ش┘ ╪ص╪د┘┘è╪د┘ï</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-gray-150 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-500 dark:text-slate-400">╪د┘┘╪▒┘ê╪╣ ╪د┘┘╪┤╪╖╪ر</span>
+                      <div className="p-2 bg-green-50 dark:bg-green-950/40 text-green-655 dark:text-green-400 rounded-xl">
+                        <Activity className="w-5 h-5 animate-pulse" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-3xl font-black font-sans text-green-600 dark:text-green-400">{activeServers}</div>
+                      <div className="w-full bg-gray-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-green-500 h-full" style={{ width: `${activePercent}%` }}></div>
+                      </div>
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500 font-semibold">{activePercent}% ┘à┘ ╪د┘╪ح╪ش┘à╪د┘┘è ┘è╪╣┘à┘</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-gray-150 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-500 dark:text-slate-400">╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د┘ï</span>
+                      <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-blue-650 dark:text-blue-400 rounded-xl">
+                        <Sparkles className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-3xl font-black font-sans text-blue-600 dark:text-blue-400">{openingSoonServers}</div>
+                      <div className="w-full bg-gray-100 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-blue-500 h-full" style={{ width: `${openingPercent}%` }}></div>
+                      </div>
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500 font-semibold">{openingPercent}% ╪ش╪د┘ç╪▓╪ر ┘┘╪د┘╪ز╪ز╪د╪ص</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-gray-150 dark:border-slate-700/60 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-gray-500 dark:text-slate-400">╪د┘┘╪▒┘ê╪╣ ╪د┘┘à╪║┘┘é╪ر</span>
+                      <div className="p-2 bg-rose-50 dark:bg-rose-950/40 text-rose-650 dark:text-rose-400 rounded-xl">
+                        <AlertTriangle className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <div className="text-3xl font-black font-sans text-rose-650 dark:text-rose-400">
+                        {closedTempServers + closedPermServers}
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-gray-400 font-semibold">
+                        <span>┘à╪ج┘é╪ز╪د┘ï: {closedTempServers}</span>
+                        <span>┘┘ç╪د╪خ┘è╪د┘ï: {closedPermServers}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {/* ╪ز┘ê╪▓┘è╪╣ ╪د┘┘╪▒┘ê╪╣ ╪ص╪│╪ذ ╪د┘╪ز╪╡┘┘è┘ */}
+                  <div className="lg:col-span-2 bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-150 dark:border-slate-700/60 shadow-sm space-y-4">
+                    <h3 className="text-sm font-extrabold text-gray-800 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700 pb-3 flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-indigo-500" />
+                      ╪ز┘ê╪▓┘è╪╣ ╪د┘┘╪▒┘ê╪╣ ╪ذ╪ص╪│╪ذ ╪د┘╪ز╪╡┘┘è┘ ┘ê╪د┘╪╣┘╪د┘à╪ر ╪د┘╪ز╪ش╪د╪▒┘è╪ر
+                    </h3>
+                    <div className="space-y-3.5">
+                      {categories.filter(c => c.id !== 'all' && c.id !== 'stats' && c.id !== 'users' && c.id !== 'audit').map(cat => {
+                        const count = categoryCountsData[cat.id] || 0;
+                        const pct = totalServers ? Math.round((count / totalServers) * 100) : 0;
+                        const theme = categoryThemes[cat.id] || categoryThemes.all;
+                        const barBg = cat.id === '┘┘┘ê╪▒┘è┘╪د' ? 'bg-sky-500' :
+                                      cat.id === '┘╪▒┘╪┤╪د┘è╪▓' ? 'bg-purple-500' :
+                                      cat.id === '╪ش┘à┘╪ر' ? 'bg-amber-500' :
+                                      cat.id === '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»' ? 'bg-emerald-500' :
+                                      cat.id === '╪د╪│┘â╪ز╪┤╪▒' ? 'bg-indigo-500' :
+                                      cat.id === '┘┘è┘╪د┘╪ز┘ê' ? 'bg-rose-500' :
+                                      'bg-slate-500';
+                        
+                        return (
+                          <div key={cat.id} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs font-bold">
+                              <div className="flex items-center gap-2">
+                                <span className={`p-1 rounded-sm bg-gray-50 dark:bg-slate-900/60 ${theme.iconColor}`}>
+                                  {renderCategoryIcon(cat.id, "w-3.5 h-3.5")}
+                                </span>
+                                <span className="text-gray-700 dark:text-slate-300">{cat.name}</span>
+                              </div>
+                              <span className="text-gray-500 dark:text-slate-450">{count} ┘╪▒╪╣ ({pct}%)</span>
+                            </div>
+                            <div className="w-full bg-gray-100 dark:bg-slate-700/60 h-2.5 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full transition-all duration-1000 ${barBg}`} style={{ width: `${pct}%` }}></div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* ╪ح╪ص╪╡╪د╪خ┘è╪د╪ز ╪│╪▒┘è╪╣╪ر ┘┘╪ص╪│╪د╪ذ╪د╪ز */}
+                  <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-150 dark:border-slate-700/60 shadow-sm space-y-4">
+                    <h3 className="text-sm font-extrabold text-gray-800 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700 pb-3 flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-emerald-500" />
+                      ╪ح╪ص╪╡╪د╪خ┘è╪د╪ز ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ ┘ê╪د┘╪ز┘╪د╪╣┘
+                    </h3>
+                    
+                    {isLoadingUsers ? (
+                      <div className="h-48 flex items-center justify-center text-xs text-gray-500">╪ش╪د╪▒┘è ╪د┘╪ز╪ص┘à┘è┘...</div>
+                    ) : (
+                      <div className="space-y-5">
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div className="bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl text-center space-y-1 border border-slate-100 dark:border-slate-700/40">
+                            <span className="text-[10px] text-gray-400 dark:text-slate-500 font-extrabold block">╪ح╪ش┘à╪د┘┘è ╪د┘╪ث╪╣╪╢╪د╪ة</span>
+                            <span className="text-2xl font-black font-mono text-gray-850 dark:text-slate-200">{adminUsers.length}</span>
+                          </div>
+                          <div className="bg-green-50/40 dark:bg-green-950/10 p-4 rounded-xl text-center space-y-1 border border-green-100/30 dark:border-green-950/20">
+                            <span className="text-[10px] text-green-600 dark:text-green-400 font-extrabold block">┘╪┤╪╖ ╪د┘╪ت┘</span>
+                            <span className="text-2xl font-black font-mono text-green-600 dark:text-green-400">
+                              {adminUsers.filter(u => {
+                                const diff = Date.now() - new Date(u.last_seen).getTime();
+                                return diff < 300000;
+                              }).length}
+                            </span>
+                          </div>
+                          <div className="bg-indigo-50/40 dark:bg-indigo-950/10 p-4 rounded-xl text-center space-y-1 border border-indigo-100/30 dark:border-indigo-950/20">
+                            <span className="text-[10px] text-indigo-650 dark:text-indigo-400 font-extrabold block">╪د┘┘à┘ê╪س┘ê┘é┘è┘</span>
+                            <span className="text-2xl font-black font-mono text-indigo-600 dark:text-indigo-400">
+                              {adminUsers.filter(u => u.is_trusted).length}
+                            </span>
+                          </div>
+                          <div className="bg-rose-50/40 dark:bg-rose-950/10 p-4 rounded-xl text-center space-y-1 border border-rose-100/30 dark:border-rose-950/20">
+                            <span className="text-[10px] text-rose-650 dark:text-rose-400 font-extrabold block">╪د┘┘à╪╣╪╖┘┘è┘</span>
+                            <span className="text-2xl font-black font-mono text-rose-650 dark:text-rose-400">
+                              {adminUsers.filter(u => !u.is_active).length}
+                            </span>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={() => setActiveCategory('users')}
+                          className="w-full text-center py-2 bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-450 font-bold rounded-xl text-xs transition-colors border border-indigo-100/40 dark:border-indigo-900/30 cursor-pointer"
+                        >
+                          ╪د┘╪░┘ç╪د╪ذ ┘╪ح╪»╪د╪▒╪ر ╪د┘╪╡┘╪د╪ص┘è╪د╪ز ┘ê╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ ظ
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* ╪ت╪«╪▒ ┘╪▒┘ê╪╣ ┘à╪│╪ش┘╪ر */}
+                <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl border border-gray-150 dark:border-slate-700/60 shadow-sm space-y-4">
+                  <h3 className="text-sm font-extrabold text-gray-800 dark:text-slate-200 border-b border-gray-100 dark:border-slate-700 pb-3 flex items-center gap-1.5">
+                    <Store className="w-4 h-4 text-amber-500" />
+                    ╪ت╪«╪▒ 5 ┘╪▒┘ê╪╣ ╪ز┘à ╪ز╪│╪ش┘è┘┘ç╪د ╪ذ╪د┘╪┤╪ذ┘â╪ر
+                  </h3>
+                  <div className="divide-y divide-gray-150 dark:divide-slate-700">
+                    {data.slice(0, 5).map(branch => {
+                      const theme = categoryThemes[branch.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣] || categoryThemes.all;
+                      return (
+                        <div key={branch.id} className="py-3 flex items-center justify-between text-xs font-semibold">
+                          <div className="flex items-center gap-3">
+                            <span className={`px-2 py-1 rounded-sm font-bold border ${theme.badgeInactive}`}>
+                              {branch.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣}
+                            </span>
+                            <div className="flex flex-col">
+                              <span className="text-gray-800 dark:text-slate-200 font-bold">{branch.╪د╪│┘à_╪د┘┘╪▒╪╣_ar}</span>
+                              <span className="text-[10px] text-gray-400 font-mono">╪▒┘é┘à ╪د┘┘╪▒╪╣: {branch.╪▒┘é┘à_╪د┘┘╪▒╪╣}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 font-mono text-gray-500 dark:text-slate-400">
+                            <span>{branch.╪ز╪د╪▒┘è╪«_╪د┘╪د┘╪┤╪د╪ة ? new Date(branch.╪ز╪د╪▒┘è╪«_╪د┘╪د┘╪┤╪د╪ة).toLocaleDateString('ar-EG') : 'ظ¤'}</span>
+                            <span className={`px-1.5 py-0.5 rounded-sm text-[10px] ${branch.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘è╪╣┘à┘' ? 'bg-green-150 text-green-700' : 'bg-red-150 text-red-700'}`}>
+                              {branch.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* ╪س╪د┘┘è╪د┘ï: ┘┘è ╪ص╪د┘ ╪ز┘╪╣┘è┘ ╪ز╪ذ┘ê┘è╪ذ ╪ح╪»╪د╪▒╪ر ┘ê╪╡┘╪د╪ص┘è╪د╪ز ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ */}
+            {activeCategory === 'users' && (
+              <div className="w-full md:max-w-[996px] space-y-4 animate-fade-in">
+                {/* ╪┤╪▒┘è╪╖ ╪╣┘┘ê╪د┘ ╪ح╪»╪د╪▒╪ر ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ */}
+                <div className="w-fit max-w-full bg-white dark:bg-slate-800 p-2 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-3 flex flex-row flex-nowrap gap-3 items-center justify-start overflow-x-auto overflow-y-hidden custom-scrollbar">
+                  <div className="flex items-center gap-2 shrink-0 h-[34px] px-2 border-l-2 border-emerald-500">
+                    <Users className="w-5 h-5 text-emerald-500" />
+                    <span className="text-sm font-bold text-gray-800 dark:text-slate-200 whitespace-nowrap">╪ح╪»╪د╪▒╪ر ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ ┘ê╪╡┘╪د╪ص┘è╪د╪ز ╪د┘┘ê╪╡┘ê┘</span>
+                  </div>
+                  <button
+                    onClick={fetchAdminUsers}
+                    className="h-[34px] px-2.5 rounded-sm text-gray-500 hover:text-emerald-600 dark:text-slate-400 dark:hover:text-emerald-400 bg-gray-50 hover:bg-emerald-50 dark:bg-slate-900/50 dark:hover:bg-emerald-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0 gap-1.5"
+                    title="╪ز╪ص╪»┘è╪س ╪د┘┘é╪د╪خ┘à╪ر"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${isLoadingUsers ? 'animate-spin' : ''}`} />
+                    <span className="text-xs font-bold whitespace-nowrap">╪ز╪ص╪»┘è╪س</span>
+                  </button>
+                </div>
+
+                {/* ╪ش╪»┘ê┘ ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ ┘ê╪د┘╪ذ┘è╪د┘╪د╪ز */}
+                <div className="overflow-auto max-h-[680px] bg-white dark:bg-slate-800 shadow-sm rounded-sm border border-gray-200 dark:border-slate-700">
+                  <table className="min-w-full text-right border-collapse">
+                    <thead className="sticky top-0 bg-gray-200 dark:bg-slate-900 border-b border-gray-350 dark:border-slate-700 z-10 shadow-sm text-gray-800 dark:text-slate-100">
+                      <tr>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">╪د┘┘à╪│╪ز╪«╪»┘à</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">╪ز╪د╪▒┘è╪« ╪د┘╪د┘╪╢┘à╪د┘à</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">╪د┘╪ص╪د┘╪ر ┘ê╪د┘┘╪┤╪د╪╖</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700">╪╡┘╪د╪ص┘è╪د╪ز ╪▒╪ج┘è╪ر ╪د┘╪ز╪ذ┘ê┘è╪ذ╪د╪ز</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 text-center">╪د┘╪ز╪ص┘â┘à</th>
+                        <th className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 border border-gray-200 dark:border-slate-700 text-center">╪«┘è╪د╪▒╪د╪ز ╪ح╪╢╪د┘┘è╪ر</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                      {isLoadingUsers ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-16 text-center text-gray-500 dark:text-slate-450">
+                            <div className="flex flex-col items-center gap-2">
+                              <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                              <span className="font-bold">╪ش╪د╪▒┘è ╪ز╪ص┘à┘è┘ ┘é╪د╪خ┘à╪ر ╪د┘╪ص╪│╪د╪ذ╪د╪ز...</span>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : adminUsers.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-16 text-center text-gray-500">
+                            ┘╪د ┘è┘ê╪ش╪» ┘à╪│╪ز╪«╪»┘à┘ê┘ ┘à╪│╪ش┘┘ê┘ ╪ص╪د┘┘è╪د┘ï
+                          </td>
+                        </tr>
+                      ) : (
+                        adminUsers.map(user => {
+                          const isOnline = Date.now() - new Date(user.last_seen).getTime() < 300000;
+                          const formattedJoinDate = user.created_at ? new Date(user.created_at).toLocaleDateString('ar-EG', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }) : 'ظ¤';
+
+                          return (
+                            <tr key={user.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                              {/* ╪ذ╪╖╪د┘é╪ر ╪د┘┘à╪│╪ز╪«╪»┘à ╪د┘╪┤╪«╪╡┘è╪ر */}
+                              <td className="px-4 py-3.5 border-b border-gray-150 dark:border-slate-700/60">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white font-extrabold shadow-sm shrink-0 uppercase">
+                                    {user.avatar_url ? (
+                                      <img src={user.avatar_url} alt={user.full_name} className="w-10 h-10 rounded-full object-cover" />
+                                    ) : (
+                                      user.full_name?.substring(0, 2) || user.email?.substring(0, 2)
+                                    )}
+                                  </div>
+                                  <div className="flex flex-col min-w-0">
+                                    <span className="font-bold text-gray-900 dark:text-slate-100 flex items-center gap-1.5">
+                                      {user.full_name || '┘à╪│╪ز╪«╪»┘à ╪│┘è╪▒┘╪▒'}
+                                      {user.role === 'admin' && (
+                                        <span className="px-1.5 py-0.25 bg-amber-100 text-amber-850 dark:bg-amber-955/50 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50 rounded-sm text-[9px] font-black">
+                                          ┘à╪│╪ج┘ê┘
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="text-xs text-gray-500 dark:text-slate-450 truncate font-mono">{user.email}</span>
+                                  </div>
+                                </div>
+                              </td>
+
+                              {/* ╪ز╪د╪▒┘è╪« ╪د┘╪د┘╪╢┘à╪د┘à */}
+                              <td className="px-4 py-3.5 border-b border-gray-150 dark:border-slate-700/60 font-semibold text-gray-650 dark:text-slate-350">
+                                {formattedJoinDate}
+                              </td>
+
+                              {/* ╪ص╪د┘╪ر ╪د┘┘╪┤╪د╪╖ */}
+                              <td className="px-4 py-3.5 border-b border-gray-150 dark:border-slate-700/60">
+                                <div className="flex flex-col gap-1">
+                                  {isOnline ? (
+                                    <span className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-bold">
+                                      <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                                      </span>
+                                      ┘╪┤╪╖ ╪د┘╪ت┘
+                                    </span>
+                                  ) : (
+                                    <span className="text-xs text-gray-400 dark:text-slate-500 flex items-center gap-1.5">
+                                      <span className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-slate-600"></span>
+                                      ╪«╪د╪▒╪ش ╪د┘╪«╪»┘à╪ر ({new Date(user.last_seen).toLocaleDateString('ar-EG', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                      })})
+                                    </span>
+                                  )}
+                                </div>
+                              </td>
+
+                              {/* ╪╡┘╪د╪ص┘è╪د╪ز ╪د┘╪ث┘é╪│╪د┘à ╪د┘╪ز┘╪د╪╣┘┘è╪ر */}
+                              <td className="px-4 py-3.5 border-b border-gray-150 dark:border-slate-700/60">
+                                <div className="flex flex-wrap gap-1 max-w-xs justify-start">
+                                  {['╪د┘┘â┘', '┘┘┘ê╪▒┘è┘╪د', '┘╪▒┘╪┤╪د┘è╪▓', '╪ش┘à┘╪ر', '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»', '╪د╪│┘â╪ز╪┤╪▒', '┘┘è┘╪د┘╪ز┘ê', '╪د┘╪ح╪»╪د╪▒╪ر'].map(catId => {
+                                    const isAllowed = user.allowed_categories?.includes(catId);
+                                    return (
+                                      <button
+                                        key={catId}
+                                        onClick={() => handleToggleCategory(user, catId)}
+                                        className={`px-1.5 py-0.5 rounded-sm text-[10px] font-bold border transition-all duration-200 cursor-pointer ${
+                                          isAllowed
+                                            ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-950/40 dark:border-indigo-900 text-indigo-650 dark:text-indigo-300'
+                                            : 'bg-gray-50 border-gray-200 dark:bg-slate-900/20 dark:border-slate-800 text-gray-400 dark:text-slate-600 line-through'
+                                        }`}
+                                        title={`${isAllowed ? '╪ح┘╪║╪د╪ة ╪╡┘╪د╪ص┘è╪ر' : '╪ح╪╣╪╖╪د╪ة ╪╡┘╪د╪ص┘è╪ر'} ${catId}`}
+                                      >
+                                        {catId}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </td>
+
+                              {/* ╪د┘╪ز╪ص┘â┘à ┘┘è ╪د┘╪ص╪╕╪▒ ┘ê╪د┘┘à┘ê╪س┘ê┘é┘è╪ر */}
+                              <td className="px-4 py-3.5 border-b border-gray-150 dark:border-slate-700/60 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => updateUserStatus(user, { is_active: !user.is_active })}
+                                    className={`px-2.5 py-1 rounded-sm text-xs font-extrabold transition-all cursor-pointer ${
+                                      user.is_active
+                                        ? 'bg-green-100 hover:bg-green-200 border border-green-200 text-green-700 dark:bg-green-950/30 dark:border-green-900/40 dark:text-green-400'
+                                        : 'bg-red-100 hover:bg-red-200 border border-red-200 text-red-700 dark:bg-red-950/30 dark:border-red-900/40 dark:text-red-400'
+                                    }`}
+                                  >
+                                    {user.is_active ? '┘╪┤╪╖' : '┘à╪ص╪╕┘ê╪▒'}
+                                  </button>
+
+                                  <button
+                                    onClick={() => updateUserStatus(user, { is_trusted: !user.is_trusted })}
+                                    className={`px-2.5 py-1 rounded-sm text-xs font-extrabold transition-all cursor-pointer ${
+                                      user.is_trusted
+                                        ? 'bg-amber-100 hover:bg-amber-200 border border-amber-200 text-amber-700 dark:bg-amber-955/30 dark:border-amber-900/40 dark:text-amber-400'
+                                        : 'bg-gray-150 hover:bg-gray-200 border border-gray-200 text-gray-650 dark:bg-slate-900/20 dark:border-slate-800 dark:text-slate-450'
+                                    }`}
+                                  >
+                                    {user.is_trusted ? '┘à┘ê╪س┘ê┘é' : '╪╣╪د╪»┘è'}
+                                  </button>
+                                </div>
+                              </td>
+
+                              {/* ╪د┘╪«┘è╪د╪▒╪د╪ز ╪د┘╪ح╪╢╪د┘┘è╪ر ┘à╪س┘ ╪ص╪░┘ ╪د┘╪ث╪╣╪╢╪د╪ة ┘ê╪د┘╪ز╪▒┘é┘è╪ر */}
+                              <td className="px-4 py-3.5 border-b border-gray-150 dark:border-slate-700/60 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={() => updateUserStatus(user, { role: user.role === 'admin' ? 'user' : 'admin' })}
+                                    className="text-xs bg-slate-50 dark:bg-slate-900/40 hover:bg-slate-100 border border-gray-200 dark:border-slate-750 px-2 py-1 rounded-sm font-bold transition-colors cursor-pointer text-gray-750 dark:text-slate-350"
+                                    title={user.role === 'admin' ? '╪ز╪«┘┘è╪╢ ┘┘à╪│╪ز╪«╪»┘à ╪╣╪د╪»┘è' : '╪ز╪▒┘é┘è╪ر ┘┘à╪│╪ج┘ê┘'}
+                                  >
+                                    {user.role === 'admin' ? '╪ح┘╪║╪د╪ة ╪د┘┘à╪│╪ج┘ê┘' : '╪ش╪╣┘┘ç ┘à╪│╪ج┘ê┘'}
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => handleUserDeleteClick(user)}
+                                    disabled={user.id === currentUser?.id}
+                                    className={`p-1 rounded-sm border transition-colors ${
+                                      user.id === currentUser?.id
+                                        ? 'opacity-40 cursor-not-allowed border-gray-200 text-gray-400 bg-gray-50'
+                                        : 'border-red-100 bg-red-50 text-red-650 hover:bg-red-100 dark:border-red-950/40 dark:bg-red-950/20 dark:text-red-400 cursor-pointer'
+                                    }`}
+                                    title={user.id === currentUser?.id ? '┘╪د ┘è┘à┘â┘┘â ╪ص╪░┘ ╪ص╪│╪د╪ذ┘â ╪ذ┘┘╪│┘â' : '╪ص╪░┘ ╪د┘╪╣╪╢┘ê ┘┘ç╪د╪خ┘è╪د┘ï'}
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {activeCategory === 'hardware' && (
+              <HardwareInventoryTable />
+            )}
+            {activeCategory === '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز' && (
+              <ComputersInventoryTable />
+            )}
+            {activeCategory === '╪ذ┘è╪د┘╪د╪ز ╪د┘╪د╪ز╪╡╪د┘' && (
+              <BranchConnectionsTable />
+            )}
+
+            {/* ╪س╪د┘╪س╪د┘ï: ╪┤╪د╪┤╪ر ╪ش╪»╪د┘ê┘ ╪د┘╪ذ┘è╪د┘╪د╪ز ┘ê╪د┘╪ث┘é╪│╪د┘à ╪د┘╪╣╪د╪»┘è╪ر ┘┘┘╪▒┘ê╪╣ (╪ز╪╕┘ç╪▒ ┘┘é╪╖ ╪╣┘╪»┘à╪د ┘╪د ╪ز┘â┘ê┘ ╪د┘╪ح╪ص╪╡╪د╪خ┘è╪د╪ز ╪ث┘ê ╪ح╪»╪د╪▒╪ر ╪د┘┘à╪│╪ز╪«╪»┘à┘è┘ ┘╪┤╪╖╪ر) */}
+            {activeCategory !== 'stats' && activeCategory !== 'users' && activeCategory !== 'audit' && activeCategory !== 'hardware' && activeCategory !== '┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘ê┘à┘╪ص┘é╪د╪ز' && activeCategory !== '╪ذ┘è╪د┘╪د╪ز ╪د┘╪د╪ز╪╡╪د┘' && (
+              <>
+                {/* ┘â╪▒┘ê╪ز ╪ز╪╡┘┘è╪ر ╪د┘╪ص╪د┘╪د╪ز ╪د┘╪│╪▒┘è╪╣╪ر ┘┘┘╪▒┘ê╪╣ */}
+                <div className="w-full md:max-w-[996px] flex flex-row gap-2.5 mb-2">
+                  <button
+                    onClick={() => setStatusFilter(statusFilter === '┘è╪╣┘à┘' ? null : '┘è╪╣┘à┘')}
+                    className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === '┘è╪╣┘à┘'
+                      ? 'bg-green-600 border-transparent text-white ring-2 ring-green-500/20'
+                      : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-green-500 hover:shadow-md'
+                      }`}
+                  >
+                    <span>┘è╪╣┘à┘</span>
+                    <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === '┘è╪╣┘à┘' ? 'bg-white/20 text-white' : 'bg-green-100 dark:bg-green-950/40 text-green-650 dark:text-green-400'}`}>
+                      {stats['┘è╪╣┘à┘'] || 0}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setStatusFilter(statusFilter === '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د' ? null : '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د')}
+                    className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د'
+                      ? 'bg-blue-600 border-transparent text-white ring-2 ring-blue-500/20'
+                      : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-blue-500 hover:shadow-md'
+                      }`}
+                  >
+                    <span>╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د</span>
+                    <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د' ? 'bg-white/20 text-white' : 'bg-blue-100 dark:bg-blue-950/40 text-blue-650 dark:text-blue-400'}`}>
+                      {stats['╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د'] || 0}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setStatusFilter(statusFilter === '┘à╪║┘┘é ┘à╪ج┘é╪ز╪د' ? null : '┘à╪║┘┘é ┘à╪ج┘é╪ز╪د')}
+                    className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === '┘à╪║┘┘é ┘à╪ج┘é╪ز╪د'
+                      ? 'bg-yellow-500 border-transparent text-white ring-2 ring-yellow-400/20'
+                      : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-yellow-500 hover:shadow-md'
+                      }`}
+                  >
+                    <span>┘à╪║┘┘é ┘à╪ج┘é╪ز╪د</span>
+                    <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === '┘à╪║┘┘é ┘à╪ج┘é╪ز╪د' ? 'bg-white/20 text-white' : 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-650 dark:text-yellow-400'}`}>
+                      {stats['┘à╪║┘┘é ┘à╪ج┘é╪ز╪د'] || 0}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={() => setStatusFilter(statusFilter === '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï' ? null : '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï')}
+                    className={`flex-1 py-2.5 px-4 rounded-sm shadow-sm border flex items-center justify-center gap-2 transition-all cursor-pointer text-base font-extrabold ${statusFilter === '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï'
+                      ? 'bg-red-600 border-transparent text-white ring-2 ring-red-500/20'
+                      : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:border-red-500 hover:shadow-md'
+                      }`}
+                  >
+                    <span>┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï</span>
+                    <span className={`px-2.5 py-0.5 rounded-sm text-sm font-black ${statusFilter === '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï' ? 'bg-white/20 text-white' : 'bg-red-100 dark:bg-red-950/40 text-red-650 dark:text-red-400'}`}>
+                      {stats['┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï'] || 0}
+                    </span>
+                  </button>
+                </div>
+
+                {/* ╪ص┘é┘ê┘ ┘ê┘ç┘à┘è╪ر ╪ز┘à┘╪╣ ╪د┘┘à╪ز╪╡┘╪ص ┘à┘ ╪د┘┘à┘╪ة ╪د┘╪ز┘┘é╪د╪خ┘è */}
+                <div style={{ display: 'none' }} aria-hidden="true">
+                  <input type="text" name="fakeusernameremembered" tabIndex={-1} autoComplete="username" />
+                  <input type="password" name="fakepasswordremembered" tabIndex={-1} autoComplete="current-password" />
+                </div>
+
+                {/* ╪┤╪▒┘è╪╖ ╪د┘╪ذ╪ص╪س ┘ê╪د┘┘┘╪ز╪▒╪ر ┘ê╪ث╪▓╪▒╪د╪▒ ╪د┘╪ز╪ص┘â┘à ┘┘è ╪╡┘ ┘ê╪د╪ص╪» ╪»╪د╪خ┘à┘ï╪د */}
+                <div className="w-fit max-w-full bg-white dark:bg-slate-800 p-2 rounded-sm shadow-sm border border-gray-200 dark:border-slate-700 mb-3 flex flex-row flex-nowrap gap-3 items-center justify-start overflow-x-auto overflow-y-hidden custom-scrollbar">
+                  
+                  {/* ╪د┘╪ذ╪ص╪س */}
+                  <div className="w-[220px] md:w-[280px] shrink-0 relative h-[34px]">
+                    <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center pointer-events-none">
+                      <svg className="h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                    </div>
+                    <input
+                      type="text"
+                      id="table-search-box"
+                      name="table-search-box"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-form-type="other"
+                      placeholder="╪د╪ذ╪ص╪س ╪ذ╪▒┘é┘à ╪د┘┘╪▒╪╣╪î ╪د┘╪د╪│┘à..."
+                      className="w-full h-full pr-9 pl-8 py-1.5 bg-gray-50 dark:bg-slate-900/50 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:bg-white dark:focus:bg-slate-800 transition-all"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                    />
+                    {search && (
+                      <button
+                        onClick={() => setSearch('')}
+                        className="absolute inset-y-0 left-0 pl-2.5 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 cursor-pointer"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* ┘╪╖╪د┘é ╪د┘╪ز╪د╪▒┘è╪« ╪د┘┘à╪»┘à╪ش */}
+                  <div className="flex items-center bg-gray-50 dark:bg-slate-900/50 border border-gray-300 dark:border-slate-600 rounded-sm shrink-0 px-2 h-[34px] gap-2">
+                    <svg className="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                    <div className="flex items-center gap-1.5 h-full">
+                      <span className="text-xs font-bold text-gray-500 dark:text-slate-400 leading-none mt-0.5">┘à┘</span>
+                      <input
+                        type="date"
+                        className="bg-transparent text-gray-900 dark:text-slate-100 text-sm focus:outline-none w-[110px] h-full"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="w-px h-4 bg-gray-300 dark:bg-slate-600 mx-0.5"></div>
+                    <div className="flex items-center gap-1.5 h-full">
+                      <span className="text-xs font-bold text-gray-500 dark:text-slate-400 leading-none mt-0.5">╪ح┘┘ë</span>
+                      <input
+                        type="date"
+                        className="bg-transparent text-gray-900 dark:text-slate-100 text-sm focus:outline-none w-[110px] h-full"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* ╪د┘╪ث╪▓╪▒╪د╪▒ */}
+                  <div className="flex items-center gap-2 shrink-0 h-[34px]">
+                    {isAdmin && (
+                      <button
+                        onClick={toggleAllPasswords}
+                        className="h-full px-2 rounded-sm text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-50 hover:bg-indigo-50 dark:bg-slate-900/50 dark:hover:bg-indigo-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                        title={isAllPasswordsRevealed ? "╪ح╪«┘╪د╪ة ┘â┘ ╪د┘╪ذ╪د╪│┘ê╪▒╪»╪د╪ز" : "╪ح╪╕┘ç╪د╪▒ ┘â╪د┘╪ر ┘â┘┘à╪د╪ز ╪د┘┘à╪▒┘ê╪▒"}
+                      >
+                        {isAllPasswordsRevealed ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    )}
+                    <Link
+                      href="/account/add"
+                      className="bg-green-600 hover:bg-green-700 transition-colors text-white px-2.5 h-full rounded-sm shadow-sm text-sm font-semibold flex items-center gap-1.5 shrink-0"
+                      title="╪ح╪╢╪د┘╪ر ╪│┘è╪▒┘╪▒ ╪ش╪»┘è╪»"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                      </svg>
+                      <span className="hidden xl:inline">╪ح╪╢╪د┘╪ر</span>
+                    </Link>
+                    
+                    <button
+                      onClick={exportToCSV}
+                      className="bg-indigo-600 hover:bg-indigo-700 transition-colors text-white px-2.5 h-full rounded-sm shadow-sm text-sm font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer"
+                      title="╪ز╪╡╪»┘è╪▒ ╪ح┘┘ë Excel"
+                    >
+                      <svg xmlns="http://www.w3.org/2050/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                      </svg>
+                      <span className="hidden xl:inline">╪ز╪╡╪»┘è╪▒</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* ╪ش╪»┘ê┘ ┘╪▒┘ê╪╣ ╪د┘╪│┘è╪▒┘╪▒╪د╪ز */}
+                <div className="overflow-auto max-h-[680px] bg-white dark:bg-slate-800 shadow-sm rounded-sm border border-gray-200 dark:border-slate-700">
+                  <table className="min-w-full text-right border-collapse">
+                    <thead className="sticky top-0 bg-gray-200 dark:bg-slate-900 border-b border-gray-350 dark:border-slate-700 z-10 shadow-sm text-gray-800 dark:text-slate-100">
+                      <tr>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[100px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('╪▒┘é┘à_╪د┘┘╪▒╪╣')}
+                            >
+                              <span>╪▒┘é┘à ╪د┘┘╪▒╪╣</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === '╪▒┘é┘à_╪د┘┘╪▒╪╣' ? (sortConfig.direction === 'asc' ? 'ظّ' : 'ظô') : 'ظçà'}</span>
+                            </div>
+                          </div>
+                        </th>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[150px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('╪د╪│┘à_╪د┘┘╪▒╪╣_ar')}
+                            >
+                              <span>╪د┘╪د╪│┘à (AR)</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === '╪د╪│┘à_╪د┘┘╪▒╪╣_ar' ? (sortConfig.direction === 'asc' ? 'ظّ' : 'ظô') : 'ظçà'}</span>
+                            </div>
+                          </div>
+                        </th>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[150px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣')}
+                            >
+                              <span>╪د┘╪ز╪╡┘┘è┘ ┘ê╪د┘┘à┘╪╖┘é╪ر</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === '╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣' ? (sortConfig.direction === 'asc' ? 'ظّ' : 'ظô') : 'ظçà'}</span>
+                            </div>
+                          </div>
+                        </th>
+                        {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                          <>
+                            <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                              <div className="resize-x overflow-hidden min-w-[150px]">
+                                <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                                  ╪د┘╪╣┘┘ê╪د┘ ┘ê╪د┘╪╢╪▒┘è╪ذ╪ر
+                                </div>
+                              </div>
+                            </th>
+                          </>
+                        )}
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[120px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒')}
+                            >
+                              <span>╪د┘┘è┘ê╪▓╪▒</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === '╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒' ? (sortConfig.direction === 'asc' ? 'ظّ' : 'ظô') : 'ظçà'}</span>
+                            </div>
+                          </div>
+                        </th>
+                        {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                          <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                            <div className="resize-x overflow-hidden min-w-[120px]">
+                              <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                                ╪د╪│┘à ╪د┘╪╖╪د╪ذ╪╣╪ر
+                              </div>
+                            </div>
+                          </th>
+                        )}
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[120px]">
+                            <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                              ╪د┘╪ذ╪د╪│┘ê┘ê╪▒╪»
+                            </div>
+                          </div>
+                        </th>
+                        {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                          <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                            <div className="resize-x overflow-hidden min-w-[120px]">
+                              <div 
+                                className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                                onClick={() => handleSort('serial_number')}
+                              >
+                                <span>╪د┘╪ز╪│┘╪│┘</span>
+                                <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === 'serial_number' ? (sortConfig.direction === 'asc' ? 'ظّ' : 'ظô') : 'ظçà'}</span>
+                              </div>
+                            </div>
+                          </th>
+                        )}
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[100px]">
+                            <div 
+                              className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 cursor-pointer select-none hover:bg-gray-300 dark:hover:bg-slate-800 transition-colors flex items-center justify-between h-full"
+                              onClick={() => handleSort('╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒')}
+                            >
+                              <span>╪د┘╪ص╪د┘╪ر</span>
+                              <span className="text-gray-400 dark:text-slate-500 text-xs">{sortConfig?.key === '╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒' ? (sortConfig.direction === 'asc' ? 'ظّ' : 'ظô') : 'ظçà'}</span>
+                            </div>
+                          </div>
+                        </th>
+                        <th className="p-0 border border-gray-200 dark:border-slate-700 align-top">
+                          <div className="resize-x overflow-hidden min-w-[140px]">
+                            <div className="px-2 py-1.5 text-base font-semibold text-gray-700 dark:text-slate-200 flex items-center h-full">
+                              ╪د┘╪«┘è╪د╪▒╪د╪ز
+                            </div>
+                          </div>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 dark:divide-slate-700">
+                      {isLoadingData ? (
+                        Array(5).fill(0).map((_, idx) => (
+                          <tr key={idx} className="animate-pulse bg-white dark:bg-slate-800">
+                            <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-16"></div></td>
+                            <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-32"></div></td>
+                            <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-24 mb-1"></div><div className="h-3 bg-gray-100 dark:bg-slate-600 rounded w-16"></div></td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-28 mb-1"></div><div className="h-3 bg-gray-100 dark:bg-slate-600 rounded w-20"></div></td>
+                            )}
+                            <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-20"></div></td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-16"></div></td>
+                            )}
+                            <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-20"></div></td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-10 mx-auto"></div></td>
+                            )}
+                            <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="h-5 bg-gray-200 dark:bg-slate-700 rounded w-16"></div></td>
+                            <td className="px-2 py-2 border border-gray-200 dark:border-slate-700/60"><div className="flex gap-1"><div className="h-6 bg-gray-200 dark:bg-slate-700 rounded w-6"></div><div className="h-6 bg-gray-200 dark:bg-slate-700 rounded w-6"></div></div></td>
+                          </tr>
+                        ))
+                      ) : sortedData.length > 0 ? (
+                        sortedData.map(row => {
+                        const rowBorderClass =
+                          row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘è╪╣┘à┘' ? 'border-r-2 border-r-green-500' :
+                            row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï' ? 'border-r-2 border-r-red-500' :
+                              row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د' ? 'border-r-2 border-r-blue-500' :
+                                'border-r-2 border-r-yellow-500';
+                        const rowBgClass =
+                          row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘┘┘ê╪▒┘è┘╪د' ? 'bg-sky-100/40 dark:bg-sky-950/20' :
+                            row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘╪▒┘╪┤╪د┘è╪▓' ? 'bg-purple-100/40 dark:bg-purple-950/20' :
+                              row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪ش┘à┘╪ر' ? 'bg-amber-100/40 dark:bg-amber-950/20' :
+                                row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»' ? 'bg-emerald-100/40 dark:bg-emerald-950/20' :
+                                  row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪د╪│┘â╪ز╪┤╪▒' ? 'bg-indigo-100/40 dark:bg-indigo-950/20' :
+                                    row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘┘è┘╪د┘╪ز┘ê' ? 'bg-rose-100/40 dark:bg-rose-950/20' :
+                                      'bg-white dark:bg-slate-800';
+
+                        const rowBorderColorClass =
+                          row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘┘┘ê╪▒┘è┘╪د' ? 'border-sky-200 dark:border-sky-900/60' :
+                            row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘╪▒┘╪┤╪د┘è╪▓' ? 'border-purple-200 dark:border-purple-900/60' :
+                              row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪ش┘à┘╪ر' ? 'border-amber-200 dark:border-amber-900/60' :
+                                row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»' ? 'border-emerald-200 dark:border-emerald-900/60' :
+                                  row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪د╪│┘â╪ز╪┤╪▒' ? 'border-indigo-200 dark:border-indigo-900/60' :
+                                    row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '┘┘è┘╪د┘╪ز┘ê' ? 'border-rose-200 dark:border-rose-900/60' :
+                                      row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ === '╪د┘╪ح╪»╪د╪▒╪ر' ? 'border-slate-300 dark:border-slate-700' :
+                                        'border-gray-200 dark:border-slate-700/60';
+
+                        return (
+                          <React.Fragment key={row.id}>
+                            <tr 
+                              onClick={() => setSelectedBranch({ id: row.╪▒┘é┘à_╪د┘┘╪▒╪╣, name: row.╪د╪│┘à_╪د┘┘╪▒╪╣_ar })}
+                              className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass} cursor-pointer`}
+                            >
+                            <td className="px-2 py-1 text-base font-medium text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700/60">{row.╪▒┘é┘à_╪د┘┘╪▒╪╣}</td>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60 relative">
+                              <div className="flex items-center justify-between">
+                                <div className="flex flex-col shrink-0">
+                                  <span className="text-gray-900 dark:text-slate-100 font-medium text-lg">{row.╪د╪│┘à_╪د┘┘╪▒╪╣_ar}</span>
+                                  <span className="text-xs text-gray-500 dark:text-slate-400 uppercase font-mono">{row.╪د╪│┘à_╪د┘┘╪▒╪╣_en}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-3 mr-auto pl-1">
+                                  {/* Inline Indicators */}
+                                  <div className="flex items-center gap-1.5">
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.connections ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.connections ? '┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪د╪ز╪╡╪د┘ ┘à╪│╪ش┘╪ر' : '┘╪د ┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪د╪ز╪╡╪د┘'}
+                                    >
+                                      <Wifi className="w-3 h-3" />
+                                    </div>
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.computers ? 'bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.computers ? '┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘à╪│╪ش┘╪ر' : '┘╪د ┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ┘â┘à╪ذ┘è┘ê╪ز╪▒'}
+                                    >
+                                      <Monitor className="w-3 h-3" />
+                                    </div>
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.hardware ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.hardware ? '┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪ش╪▒╪» ╪ث╪ش┘ç╪▓╪ر' : '┘╪د ┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪ش╪▒╪» ╪ث╪ش┘ç╪▓╪ر'}
+                                    >
+                                      <Cpu className="w-3 h-3" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                              <div className="flex flex-col">
+                                <span className="text-gray-700 dark:text-slate-300 font-medium text-base">{row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || 'ظ¤'}</span>
+                                <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{row.╪د┘┘à┘╪╖┘é╪ر || 'ظ¤'}</span>
+                              </div>
+                            </td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="text-xs text-gray-600 dark:text-slate-400">
+                                    {row.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر || row.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣ ? (
+                                      <>
+                                        {row.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر} {row.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣ && ` - ${row.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣}`}
+                                      </>
+                                    ) : 'ظ¤'}
+                                  </div>
+                                  {row.╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è && (
+                                    <div className="text-[11px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.25 rounded-sm w-fit text-gray-500 font-semibold">
+                                      ╪╢╪▒┘è╪ذ┘è: {row.╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            )}
+                            <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒}</td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/60">
+                                <div className="flex flex-col gap-0.5 text-xs">
+                                  <span className="font-semibold text-indigo-600 dark:text-indigo-400 font-mono">A4: {row.╪╖╪د╪ذ╪╣╪ر_a4 || 'ظ¤'}</span>
+                                  <span className="text-gray-500 dark:text-slate-400 font-mono">┘╪د╪ز┘ê╪▒╪ر: {row.╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒ || 'ظ¤'}</span>
+                                </div>
+                              </td>
+                            )}
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                              {decryptedPasswords[row.id] ? (
+                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <span className="font-mono text-green-600 dark:text-green-400 font-bold tracking-wider">{decryptedPasswords[row.id]}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(decryptedPasswords[row.id]);
+                                    }}
+                                    className="p-1 rounded-sm text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-50 hover:bg-indigo-50 dark:bg-slate-900/50 dark:hover:bg-indigo-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                    title="┘╪│╪« ┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <span className="text-gray-400 tracking-widest font-mono">ظتظتظتظتظتظت</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleShowPassword(row.id);
+                                    }}
+                                    className="p-1 rounded-sm text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-50 hover:bg-indigo-50 dark:bg-slate-900/50 dark:hover:bg-indigo-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                    title="╪ح╪╕┘ç╪د╪▒ ┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-1 text-sm text-center text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.serial_number || 'ظ¤'}</td>
+                            )}
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                              <span className={`px-1.5 py-0.5 rounded-sm text-xs font-bold ${row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘è╪╣┘à┘' ? 'bg-green-105 dark:bg-green-950/30 text-green-800 dark:text-green-400 border border-green-200/50 dark:border-green-900/50' :
+                                row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï' ? 'bg-red-105 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200/50 dark:border-red-900/50' :
+                                  row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د' ? 'bg-blue-105 dark:bg-blue-950/30 text-blue-800 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/50' :
+                                    'bg-yellow-105 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-400 border border-yellow-200/50 dark:border-yellow-900/50'
+                                }`}>
+                                {row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒}
+                              </span>
+                            </td>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex gap-1 items-center justify-center">
+                                <button
+                                  onClick={() => handleEditClick(row)}
+                                  className="text-indigo-650 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-250 bg-indigo-50 dark:bg-indigo-950/50 p-1 rounded-sm border border-indigo-100 dark:border-indigo-900/20 transition-colors cursor-pointer"
+                                  title="╪ز╪╣╪»┘è┘"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              <button
+                                onClick={() => handlePrint(row)}
+                                className="text-blue-650 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/50 p-1 rounded-sm border border-blue-100 dark:border-blue-900/20 transition-colors cursor-pointer"
+                                title="╪╖╪ذ╪د╪╣╪ر A4"
+                              >
+                                <Printer className="h-3.5 w-3.5" />
+                              </button>
+                              {isAdmin && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteClick(row);
+                                  }}
+                                  className="text-red-650 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 bg-red-50 dark:bg-red-950/50 p-1 rounded-sm border border-red-100 dark:border-red-900/20 transition-colors cursor-pointer"
+                                  title="╪ص╪░┘ ╪د┘┘╪▒╪╣"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              </div>
+                            </td>
+                          </tr>
+                        </React.Fragment>
+                        );
+                      })
+                      ) : (
+                        <tr>
+                          <td colSpan={10} className="p-8 text-center text-gray-500 dark:text-slate-400">
+                            ┘╪د ╪ز┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ┘à╪╖╪د╪ذ┘é╪ر ┘┘╪ذ╪ص╪س
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ┘à┘ê╪»╪د┘ ╪ز╪ث┘â┘è╪» ╪ص╪░┘ ╪د┘╪│┘è╪▒┘╪▒ ┘╪▒╪╣ */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in px-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-sm border border-red-200 dark:border-red-900/50 overflow-hidden transform transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-slate-700 bg-red-50/50 dark:bg-red-900/10 px-4 py-3">
+              <div className="bg-red-100 dark:bg-red-900/30 p-1.5 rounded-sm">
+                <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-500" />
+              </div>
+              <h3 className="text-sm font-extrabold text-red-700 dark:text-red-400">╪ز╪ث┘â┘è╪» ╪ص╪░┘ ╪د┘┘╪▒╪╣</h3>
+            </div>
+
+            <div className="px-4 pb-4">
+              <p className="mb-4 text-xs text-gray-600 dark:text-slate-350 leading-relaxed font-medium">
+                ╪ث┘╪ز ╪╣┘┘ë ┘ê╪┤┘â ╪ص╪░┘ ╪د┘┘╪▒╪╣ <span className="font-extrabold text-gray-900 dark:text-white">({serverToDelete?.╪▒┘é┘à_╪د┘┘╪▒╪╣})</span>. ┘ç╪░╪د ╪د┘╪ح╪ش╪▒╪د╪ة ┘┘ç╪د╪خ┘è ┘ê┘╪د ┘è┘à┘â┘ ╪د┘╪ز╪▒╪د╪ش╪╣ ╪╣┘┘ç.
+              </p>
+
+              {deleteError && (
+                <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 text-red-605 dark:text-red-400 text-xs font-bold rounded-sm border border-red-200 dark:border-red-900/50 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {deleteError}
+                </div>
+              )}
+
+              <div className="bg-gray-50 dark:bg-slate-900/50 p-3 rounded-sm border border-gray-200 dark:border-slate-700 mb-4">
+                <label className="block text-xs font-bold text-gray-700 dark:text-slate-350 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-gray-400" /> ┘â┘┘à╪ر ┘à╪▒┘ê╪▒ ╪د┘╪ز╪ث┘â┘è╪»
+                </label>
+                <input
+                  type="password"
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-red-500 font-mono tracking-widest text-left"
+                  value={deleteKey}
+                  onChange={(e) => setDeleteKey(e.target.value)}
+                  placeholder="ظتظتظتظت"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && confirmDelete()}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowDeleteDialog(false)}
+                  className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold py-1.5 rounded-sm transition-colors text-xs"
+                >
+                  ╪ح┘╪║╪د╪ة
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  ╪ص╪░┘ ┘┘ç╪د╪خ┘è
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ┘à┘ê╪»╪د┘ ╪ز╪ث┘â┘è╪» ╪ص╪░┘ ┘à╪│╪ز╪«╪»┘à ╪╣╪╢┘ê */}
+      {showUserDeleteDialog && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in px-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-sm border border-red-200 dark:border-red-900/50 overflow-hidden transform transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-slate-700 bg-red-50/50 dark:bg-red-900/10 px-4 py-3">
+              <div className="bg-red-100 dark:bg-red-900/30 p-1.5 rounded-sm">
+                <AlertTriangle className="w-5 h-5 text-red-650 dark:text-red-500" />
+              </div>
+              <h3 className="text-sm font-extrabold text-red-750 dark:text-red-400">╪ز╪ث┘â┘è╪» ╪ص╪░┘ ╪ص╪│╪د╪ذ ╪د┘┘à╪│╪ز╪«╪»┘à</h3>
+            </div>
+
+            <div className="px-4 pb-4">
+              <p className="mb-4 text-xs text-gray-650 dark:text-slate-300 leading-relaxed font-medium">
+                ╪ث┘╪ز ╪╣┘┘ë ┘ê╪┤┘â ╪ص╪░┘ ╪د┘╪╣╪╢┘ê <span className="font-extrabold text-gray-900 dark:text-white">{userToDelete?.full_name || userToDelete?.email}</span> ┘┘ç╪د╪خ┘è╪د┘ï. ╪│┘è╪ز┘à ╪ص╪░┘ ╪ص╪│╪د╪ذ┘ç ┘à┘ ╪ش╪»┘ê┘ ╪د┘╪ح╪»╪د╪▒╪د╪ز ┘ê┘╪╕╪د┘à ┘à╪╡╪د╪»┘é╪ر Supabase ╪ذ╪د┘┘â╪د┘à┘!
+              </p>
+
+              {userDeleteError && (
+                <div className="mb-3 p-2 bg-red-50 dark:bg-red-900/20 text-red-605 dark:text-red-405 text-xs font-bold rounded-sm border border-red-200 dark:border-red-900/50 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  {userDeleteError}
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowUserDeleteDialog(false)}
+                  className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-705 dark:text-slate-300 font-bold py-1.5 rounded-sm transition-colors text-xs"
+                >
+                  ╪ح┘╪║╪د╪ة
+                </button>
+                <button
+                  onClick={confirmUserDelete}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-1.5 rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm cursor-pointer"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  ╪ز╪ث┘â┘è╪» ╪د┘╪ص╪░┘
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ┘à┘ê╪»╪د┘ ┘┘â ╪ز╪┤┘┘è╪▒ ╪ذ╪د╪│┘ê┘ê╪▒╪» ╪│┘è╪▒┘╪▒ (┘╪▒╪»┘è) */}
+      {showPasswordDialog && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in px-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-sm border border-indigo-200 dark:border-indigo-900/50 overflow-hidden transform transition-all">
+            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-gray-100 dark:border-slate-700 bg-indigo-50/50 dark:bg-indigo-900/10 px-4 py-3">
+              <div className="bg-indigo-100 dark:bg-indigo-900/30 p-1.5 rounded-sm">
+                <ShieldCheck className="w-5 h-5 text-indigo-650 dark:text-indigo-400" />
+              </div>
+              <h3 className="text-sm font-extrabold text-indigo-800 dark:text-indigo-400">╪د┘╪╡┘╪د╪ص┘è╪ر ┘à╪╖┘┘ê╪ذ╪ر</h3>
+            </div>
+
+            <div className="px-4 pb-4">
+              <p className="mb-4 text-xs text-gray-600 dark:text-slate-300 leading-relaxed font-medium">
+                ┘è╪▒╪ش┘ë ╪ح╪»╪«╪د┘ ┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒ ╪د┘╪«╪د╪╡╪ر ╪ذ╪د┘┘à╪┤╪▒┘ ┘┘┘â ╪ز╪┤┘┘è╪▒ ┘ê╪╣╪▒╪╢ ╪د┘╪ذ╪د╪│┘ê┘ê╪▒╪».
+              </p>
+
+              <div className="bg-gray-50 dark:bg-slate-900/50 p-3 rounded-sm border border-gray-200 dark:border-slate-700 mb-4">
+                <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                  <Key className="w-3.5 h-3.5 text-gray-400" /> ┘â┘┘à╪ر ┘à╪▒┘ê╪▒ ╪د┘┘à╪┤╪▒┘
+                </label>
+                <input
+                  type="password"
+                  className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-left font-mono tracking-widest"
+                  value={decryptionKey}
+                  onChange={(e) => setDecryptionKey(e.target.value)}
+                  placeholder="ظتظتظتظت"
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && submitDecryption()}
+                  dir="ltr"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setShowPasswordDialog(false)}
+                  className="flex-1 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold py-1.5 rounded-sm transition-colors text-xs"
+                >
+                  ╪ح┘╪║╪د╪ة
+                </button>
+                <button
+                  onClick={submitDecryption}
+                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-1.5 rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  ╪╣╪▒╪╢ ╪د┘╪ذ┘è╪د┘╪د╪ز
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ┘à┘ê╪»╪د┘ ╪ز╪╣╪»┘è┘ ╪ذ┘è╪د┘╪د╪ز ╪د┘╪│┘è╪▒┘╪▒ */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-[100] animate-in fade-in px-4">
+          <div className="bg-white dark:bg-slate-800 rounded-sm shadow-2xl w-full max-w-3xl border border-gray-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-900/20 px-4 py-3 shrink-0">
+              <div className="flex items-center gap-2">
+                <div className="bg-indigo-100 dark:bg-indigo-900/30 p-1.5 rounded-sm">
+                  <Edit className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
+                <h3 className="text-sm font-extrabold text-gray-900 dark:text-slate-100">╪ز╪╣╪»┘è┘ ╪ذ┘è╪د┘╪د╪ز ╪د┘╪│┘è╪▒┘╪▒ ({editForm.╪▒┘é┘à_╪د┘┘╪▒╪╣})</h3>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 p-1 cursor-pointer">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-4 custom-scrollbar">
+              <form onSubmit={handleUpdate} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪ز╪╡┘┘è┘ ╪د┘┘╪▒╪╣</label>
+                    <select
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || '┘┘┘ê╪▒┘è┘╪د'}
+                      onChange={(e) => setEditForm({ ...editForm, ╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣: e.target.value })}
+                    >
+                      <option value="┘┘┘ê╪▒┘è┘╪د">┘┘┘ê╪▒┘è┘╪د</option>
+                      <option value="┘╪▒┘╪┤╪د┘è╪▓">┘╪▒┘╪┤╪د┘è╪▓</option>
+                      <option value="╪ش┘à┘╪ر">╪ش┘à┘╪ر</option>
+                      <option value="┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»">┘à┘ê╪▓╪╣ ┘à╪╣╪ز┘à╪»</option>
+                      <option value="╪د╪│┘â╪ز╪┤╪▒">╪د╪│┘â╪ز╪┤╪▒</option>
+                      <option value="┘┘è┘╪د┘╪ز┘ê">┘┘è┘╪د┘╪ز┘ê</option>
+                      <option value="╪د┘╪ح╪»╪د╪▒╪ر">╪د┘╪ح╪»╪د╪▒╪ر</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪▒┘é┘à ╪د┘┘╪▒╪╣</label>
+                    <input
+                      type="text"
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                      value={editForm.╪▒┘é┘à_╪د┘┘╪▒╪╣}
+                      onChange={(e) => setEditForm({ ...editForm, ╪▒┘é┘à_╪د┘┘╪▒╪╣: e.target.value })}
+                      required dir="ltr"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د┘╪ص╪د┘╪ر</label>
+                    <select
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒}
+                      onChange={(e) => setEditForm({ ...editForm, ╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒: e.target.value })}
+                    >
+                      <option value="╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د">╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د</option>
+                      <option value="┘è╪╣┘à┘">┘è╪╣┘à┘</option>
+                      <option value="┘à╪║┘┘é ┘à╪ج┘é╪ز╪د">┘à╪║┘┘é ┘à╪ج┘é╪ز╪د</option>
+                      <option value="┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï">┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د┘┘à┘╪╖┘é╪ر</label>
+                    <select
+                      className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                      value={editForm.╪د┘┘à┘╪╖┘é╪ر || ''}
+                      onChange={(e) => setEditForm({ ...editForm, ╪د┘┘à┘╪╖┘é╪ر: e.target.value })}
+                    >
+                      <option value="">-- ╪د╪«╪ز╪▒ ╪د┘┘à┘╪╖┘é╪ر --</option>
+                      <option value="1-╪د┘┘à╪»┘è┘╪ر ╪د┘┘à┘┘ê╪▒╪ر">1 - ╪د┘┘à╪»┘è┘╪ر ╪د┘┘à┘┘ê╪▒╪ر</option>
+                      <option value="1-╪د┘┘à┘╪╖┘é╪ر ╪د┘┘ê╪│╪╖┘ë">1 - ╪د┘┘à┘╪╖┘é╪ر ╪د┘┘ê╪│╪╖┘ë</option>
+                      <option value="2-╪د┘╪▒┘è╪د╪╢">2 - ╪د┘╪▒┘è╪د╪╢</option>
+                      <option value="2-╪د┘╪»┘à╪د┘à">2 - ╪د┘╪»┘à╪د┘à</option>
+                      <option value="3-╪د┘╪ش┘┘ê╪ذ┘è╪ر - ╪ث╪ذ┘ç╪د">3 - ╪د┘╪ش┘┘ê╪ذ┘è╪ر - ╪ث╪ذ┘ç╪د</option>
+                      <option value="4-╪ش╪»╪ر">4 - ╪ش╪»╪ر</option>
+                      <option value="4-╪د┘╪║╪▒╪ذ┘è╪ر - ┘à┘â╪ر">4 - ╪د┘╪║╪▒╪ذ┘è╪ر - ┘à┘â╪ر</option>
+                      <option value="5-╪د┘╪┤┘à╪د┘┘è╪ر ╪ز╪ذ┘ê┘â">5 - ╪د┘╪┤┘à╪د┘┘è╪ر ╪ز╪ذ┘ê┘â</option>
+                      <option value="5-╪د┘╪╖╪د╪خ┘">5 - ╪د┘╪╖╪د╪خ┘</option>
+                    </select>
+                  </div>
+                  <div className="lg:col-span-2">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د┘╪د╪│┘à (AR)</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          value={editForm.╪د╪│┘à_╪د┘┘╪▒╪╣_ar}
+                          onChange={(e) => setEditForm({ ...editForm, ╪د╪│┘à_╪د┘┘╪▒╪╣_ar: e.target.value })}
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د┘╪د╪│┘à (EN)</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 uppercase font-mono tracking-wider text-left"
+                          value={editForm.╪د╪│┘à_╪د┘┘╪▒╪╣_en}
+                          onChange={(e) => setEditForm({ ...editForm, ╪د╪│┘à_╪د┘┘╪▒╪╣_en: e.target.value })}
+                          required dir="ltr"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="lg:col-span-3 bg-indigo-50/50 dark:bg-indigo-950/10 p-3 rounded-sm border border-indigo-100 dark:border-indigo-900/30 grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د┘┘è┘ê╪▓╪▒</label>
+                      <input
+                        type="text"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                        value={editForm.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒}
+                        onChange={(e) => setEditForm({ ...editForm, ╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒: e.target.value })}
+                        required dir="ltr"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪ذ╪د╪│┘ê┘ê╪▒╪» ╪ش╪»┘è╪» <span className="text-[10px] text-gray-400 font-normal">(╪د╪«╪ز┘è╪د╪▒┘è)</span></label>
+                      <input
+                        type="text"
+                        className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                        value={editForm.╪ذ╪د╪│┘ê┘ê╪▒╪»}
+                        onChange={(e) => setEditForm({ ...editForm, ╪ذ╪د╪│┘ê┘ê╪▒╪»: e.target.value })}
+                        placeholder="┘╪د╪▒╪║ ┘┘╪د╪ص╪ز┘╪د╪╕ ╪ذ╪د┘┘é╪»┘è┘à"
+                        dir="ltr"
+                      />
+                    </div>
+                    {editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د┘╪ز╪│┘╪│┘</label>
+                        <input
+                          type="number"
+                          className="w-full px-2.5 py-1.5 bg-gray-100 dark:bg-slate-900 text-gray-500 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none font-mono text-left"
+                          value={editForm.serial_number || ''}
+                          onChange={(e) => setEditForm({ ...editForm, serial_number: parseInt(e.target.value) })}
+                          dir="ltr"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {editForm.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د┘╪▒┘é┘à ╪د┘╪╢╪▒┘è╪ذ┘è</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left"
+                          value={editForm.╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è || ''}
+                          onChange={(e) => setEditForm({ ...editForm, ╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è: e.target.value })}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د╪│┘à ╪د┘┘à╪»┘è┘╪ر</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          value={editForm.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر || ''}
+                          onChange={(e) => setEditForm({ ...editForm, ╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪د╪│┘à ╪د┘╪┤╪د╪▒╪╣</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                          value={editForm.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣ || ''}
+                          onChange={(e) => setEditForm({ ...editForm, ╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣: e.target.value })}
+                        />
+                      </div>
+                      <div className="lg:col-span-1 md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪╖╪د╪ذ╪╣╪ر A4</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
+                          value={editForm.╪╖╪د╪ذ╪╣╪ر_a4 || ''}
+                          onChange={(e) => setEditForm({ ...editForm, ╪╖╪د╪ذ╪╣╪ر_a4: e.target.value })}
+                          dir="ltr"
+                        />
+                      </div>
+                      <div className="lg:col-span-2 md:col-span-2">
+                        <label className="block text-xs font-bold text-gray-700 dark:text-slate-300 mb-1.5">╪╖╪د╪ذ╪╣╪ر ╪د┘┘┘ê╪د╪ز┘è╪▒</label>
+                        <input
+                          type="text"
+                          className="w-full px-2.5 py-1.5 bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100 border border-gray-300 dark:border-slate-600 rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 font-mono text-left tracking-wider"
+                          value={editForm.╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒ || ''}
+                          onChange={(e) => setEditForm({ ...editForm, ╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒: e.target.value })}
+                          dir="ltr"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-slate-700 mt-4 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-1.5 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300 font-bold rounded-sm transition-colors text-xs"
+                  >
+                    ╪ح┘╪║╪د╪ة
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-sm transition-colors flex items-center justify-center gap-1.5 text-xs shadow-sm cursor-pointer"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    ╪ز╪ص╪»┘è╪س ╪د┘╪ذ┘è╪د┘╪د╪ز
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {printingRecord && <PrintableBranchFoundation server={printingRecord} />}
+
+      {/* ╪ز┘╪ذ┘è┘ç╪د╪ز Toast ╪د┘┘à╪╣┘┘é╪ر */}
+      {toast && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-4 fade-in duration-300">
+          <div className={`px-4 py-2.5 rounded-sm shadow-xl flex items-center gap-2.5 border ${toast.type === 'success'
+            ? 'bg-green-50 dark:bg-green-950/80 border-green-200 dark:border-green-900/50 text-green-700 dark:text-green-400'
+            : 'bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-400'
+            }`}>
+            {toast.type === 'success' ? <ShieldCheck className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
+            <span className="font-bold text-xs">{toast.message}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ╪د┘╪╣╪»╪د╪» ╪د┘╪ز┘╪د╪▓┘┘è ╪د┘╪ز┘╪د╪┤┘è ┘┘┘â ╪د┘╪ز╪┤┘┘è╪▒ */}
+      {(countdown !== null || isExiting) && (
+        <div className={`fixed top-8 left-1/2 -translate-x-1/2 z-[100] transition-all duration-1000 ease-in-out ${isExiting ? 'opacity-0 -translate-y-8' : 'opacity-100 translate-y-0 animate-in slide-in-from-top-4 fade-in'
+          }`}>
+          <div className="px-5 py-3 bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-indigo-200 dark:border-indigo-900/50 rounded-sm shadow-xl flex flex-col items-center gap-1.5 min-w-[120px]">
+            <span className="text-xl font-black text-indigo-600 dark:text-indigo-400 font-mono tracking-widest">{countdown ?? 0}</span>
+            <span className="text-[10px] font-bold text-gray-500 dark:text-slate-400 uppercase tracking-widest">╪س╪د┘┘è╪ر ┘┘╪ح╪«┘╪د╪ة</span>
+          </div>
+        </div>
+      )}
+
+      {selectedBranch && (
+        <BranchProfileModal
+          branchId={selectedBranch.id}
+          branchName={selectedBranch.name}
+          onClose={() => setSelectedBranch(null)}
+        />
+      )}
+    </div>
+  );
+}

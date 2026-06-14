@@ -1,0 +1,145 @@
+                              onClick={() => setSelectedBranch({ id: row.╪▒┘é┘à_╪د┘┘╪▒╪╣, name: row.╪د╪│┘à_╪د┘┘╪▒╪╣_ar })}
+                              className={`border-b ${rowBorderColorClass} ${rowBgClass} hover:bg-indigo-50/40 dark:hover:bg-slate-700/40 transition-colors ${rowBorderClass} cursor-pointer`}
+                            >
+                            <td className="px-2 py-1 text-base font-medium text-gray-900 dark:text-slate-100 border border-gray-200 dark:border-slate-700/60">{row.╪▒┘é┘à_╪د┘┘╪▒╪╣}</td>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60 relative">
+                              <div className="flex items-center justify-between">
+                                <div className="flex flex-col shrink-0">
+                                  <span className="text-gray-900 dark:text-slate-100 font-medium text-lg">{row.╪د╪│┘à_╪د┘┘╪▒╪╣_ar}</span>
+                                  <span className="text-xs text-gray-500 dark:text-slate-400 uppercase font-mono">{row.╪د╪│┘à_╪د┘┘╪▒╪╣_en}</span>
+                                </div>
+                                
+                                <div className="flex items-center gap-3 mr-auto pl-1">
+                                  {/* Inline Indicators */}
+                                  <div className="flex items-center gap-1.5">
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.connections ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/40 dark:text-orange-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.connections ? '┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪د╪ز╪╡╪د┘ ┘à╪│╪ش┘╪ر' : '┘╪د ┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪د╪ز╪╡╪د┘'}
+                                    >
+                                      <Wifi className="w-3 h-3" />
+                                    </div>
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.computers ? 'bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.computers ? '┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ┘â┘à╪ذ┘è┘ê╪ز╪▒ ┘à╪│╪ش┘╪ر' : '┘╪د ┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ┘â┘à╪ذ┘è┘ê╪ز╪▒'}
+                                    >
+                                      <Monitor className="w-3 h-3" />
+                                    </div>
+                                    <div 
+                                      className={`p-0.5 rounded-sm transition-colors ${extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.hardware ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'bg-gray-100 text-gray-300 dark:bg-slate-700/30 dark:text-slate-600'}`}
+                                      title={extraData[row.╪▒┘é┘à_╪د┘┘╪▒╪╣]?.hardware ? '┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪ش╪▒╪» ╪ث╪ش┘ç╪▓╪ر' : '┘╪د ┘è┘ê╪ش╪» ╪ذ┘è╪د┘╪د╪ز ╪ش╪▒╪» ╪ث╪ش┘ç╪▓╪ر'}
+                                    >
+                                      <Cpu className="w-3 h-3" />
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                              <div className="flex flex-col">
+                                <span className="text-gray-700 dark:text-slate-300 font-medium text-base">{row.╪ز╪╡┘┘è┘_╪د┘┘╪▒╪╣ || 'ظ¤'}</span>
+                                <span className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{row.╪د┘┘à┘╪╖┘é╪ر || 'ظ¤'}</span>
+                              </div>
+                            </td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                                <div className="flex flex-col gap-0.5">
+                                  <div className="text-xs text-gray-600 dark:text-slate-400">
+                                    {row.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر || row.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣ ? (
+                                      <>
+                                        {row.╪د╪│┘à_╪د┘┘à╪»┘è┘╪ر} {row.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣ && ` - ${row.╪د╪│┘à_╪د┘╪┤╪د╪▒╪╣}`}
+                                      </>
+                                    ) : 'ظ¤'}
+                                  </div>
+                                  {row.╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è && (
+                                    <div className="text-[11px] bg-gray-100 dark:bg-slate-700 px-1.5 py-0.25 rounded-sm w-fit text-gray-500 font-semibold">
+                                      ╪╢╪▒┘è╪ذ┘è: {row.╪د┘╪▒┘é┘à_╪د┘╪╢╪▒┘è╪ذ┘è}
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            )}
+                            <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.╪د╪│┘à_╪د┘┘è┘ê╪▓╪▒}</td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-1 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700/60">
+                                <div className="flex flex-col gap-0.5 text-xs">
+                                  <span className="font-semibold text-indigo-600 dark:text-indigo-400 font-mono">A4: {row.╪╖╪د╪ذ╪╣╪ر_a4 || 'ظ¤'}</span>
+                                  <span className="text-gray-500 dark:text-slate-400 font-mono">┘╪د╪ز┘ê╪▒╪ر: {row.╪╖╪د╪ذ╪╣╪ر_┘┘ê╪د╪ز┘è╪▒ || 'ظ¤'}</span>
+                                </div>
+                              </td>
+                            )}
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                              {decryptedPasswords[row.id] ? (
+                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <span className="font-mono text-green-600 dark:text-green-400 font-bold tracking-wider">{decryptedPasswords[row.id]}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      copyToClipboard(decryptedPasswords[row.id]);
+                                    }}
+                                    className="p-1 rounded-sm text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-50 hover:bg-indigo-50 dark:bg-slate-900/50 dark:hover:bg-indigo-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                    title="┘╪│╪« ┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                                  <span className="text-gray-400 tracking-widest font-mono">ظتظتظتظتظتظت</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleShowPassword(row.id);
+                                    }}
+                                    className="p-1 rounded-sm text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-50 hover:bg-indigo-50 dark:bg-slate-900/50 dark:hover:bg-indigo-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
+                                    title="╪ح╪╕┘ç╪د╪▒ ┘â┘┘à╪ر ╪د┘┘à╪▒┘ê╪▒"
+                                  >
+                                    <Eye className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </td>
+                            {activeCategory !== '╪د┘╪ح╪»╪د╪▒╪ر' && (
+                              <td className="px-2 py-1 text-sm text-center text-gray-700 dark:text-slate-300 font-mono border border-gray-200 dark:border-slate-700/60">{row.serial_number || 'ظ¤'}</td>
+                            )}
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60">
+                              <span className={`px-1.5 py-0.5 rounded-sm text-xs font-bold ${row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘è╪╣┘à┘' ? 'bg-green-105 dark:bg-green-950/30 text-green-800 dark:text-green-400 border border-green-200/50 dark:border-green-900/50' :
+                                row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '┘à╪║┘┘é ┘┘ç╪د╪خ┘è╪د┘ï' ? 'bg-red-105 dark:bg-red-950/30 text-red-800 dark:text-red-400 border border-red-200/50 dark:border-red-900/50' :
+                                  row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒ === '╪د┘╪د┘╪ز╪ز╪د╪ص ┘é╪▒┘è╪ذ╪د' ? 'bg-blue-105 dark:bg-blue-950/30 text-blue-800 dark:text-blue-400 border border-blue-200/50 dark:border-blue-900/50' :
+                                    'bg-yellow-105 dark:bg-yellow-950/30 text-yellow-800 dark:text-yellow-400 border border-yellow-200/50 dark:border-yellow-900/50'
+                                }`}>
+                                {row.╪ص╪د┘╪ر_╪د┘┘è┘ê╪▓╪▒}
+                              </span>
+                            </td>
+                            <td className="px-2 py-1 text-base border border-gray-200 dark:border-slate-700/60" onClick={(e) => e.stopPropagation()}>
+                              <div className="flex gap-1 items-center justify-center">
+                                <button
+                                  onClick={() => handleEditClick(row)}
+                                  className="text-indigo-650 dark:text-indigo-400 hover:text-indigo-900 dark:hover:text-indigo-250 bg-indigo-50 dark:bg-indigo-950/50 p-1 rounded-sm border border-indigo-100 dark:border-indigo-900/20 transition-colors cursor-pointer"
+                                  title="╪ز╪╣╪»┘è┘"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </button>
+                              <button
+                                onClick={() => handlePrint(row)}
+                                className="text-blue-650 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-200 bg-blue-50 dark:bg-blue-950/50 p-1 rounded-sm border border-blue-100 dark:border-blue-900/20 transition-colors cursor-pointer"
+                                title="╪╖╪ذ╪د╪╣╪ر A4"
+                              >
+                                <Printer className="h-3.5 w-3.5" />
+                              </button>
+                              {isAdmin && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteClick(row);
+                                  }}
+                                  className="text-red-650 dark:text-red-400 hover:text-red-900 dark:hover:text-red-200 bg-red-50 dark:bg-red-950/50 p-1 rounded-sm border border-red-100 dark:border-red-900/20 transition-colors cursor-pointer"
+                                  title="╪ص╪░┘ ╪د┘┘╪▒╪╣"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              )}
+                              </div>
+                            </td>
+                          </tr>

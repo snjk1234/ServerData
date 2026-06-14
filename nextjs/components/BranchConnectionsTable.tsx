@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import { Search, RefreshCw, Edit, AlertTriangle, Calendar, X } from 'lucide-react';
-import ConnectionEditModal from './ConnectionEditModal';
+import { Search, RefreshCw, Edit, AlertTriangle, Calendar, X, Plus } from 'lucide-react';
+import ConnectionModal from './ConnectionModal';
 
 export default function BranchConnectionsTable() {
   const [data, setData] = useState<any[]>([]);
@@ -13,6 +13,7 @@ export default function BranchConnectionsTable() {
   const [sortConfig, setSortConfig] = useState<{ key: string, direction: 'asc' | 'desc' } | null>(null);
   const [selectedConnection, setSelectedConnection] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [filterType, setFilterType] = useState<string | null>(null); // 'expiring_soon', 'expired', null
   const supabase = createClient();
 
@@ -188,6 +189,15 @@ export default function BranchConnectionsTable() {
         {/* الأزرار العامة */}
         <div className="flex items-center gap-2 shrink-0 h-[34px]">
           <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="h-full px-2.5 rounded-sm text-white bg-green-600 hover:bg-green-700 transition-colors flex items-center gap-1.5 cursor-pointer text-sm font-bold shadow-sm shrink-0"
+            title="إضافة اتصال جديد"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden xl:inline">إضافة</span>
+          </button>
+
+          <button
             onClick={fetchData}
             className="h-full px-2 rounded-sm text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-50 hover:bg-indigo-50 dark:bg-slate-900/50 dark:hover:bg-indigo-900/30 border border-gray-300 dark:border-slate-600 transition-colors cursor-pointer flex items-center justify-center shrink-0"
             title="تحديث البيانات"
@@ -313,9 +323,19 @@ export default function BranchConnectionsTable() {
       </div>
 
       {isModalOpen && selectedConnection && (
-        <ConnectionEditModal
+        <ConnectionModal
+          mode="edit"
           connection={selectedConnection}
           onClose={() => setIsModalOpen(false)}
+          onSaved={fetchData}
+        />
+      )}
+
+      {isAddModalOpen && (
+        <ConnectionModal
+          mode="add"
+          branches={branches}
+          onClose={() => setIsAddModalOpen(false)}
           onSaved={fetchData}
         />
       )}
