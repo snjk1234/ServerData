@@ -128,7 +128,7 @@ export function useAccountData() {
       const newExtra: Record<string, any> = {};
       data.forEach(row => {
         const branchIdStr = String(row.رقم_الفرع).trim();
-        const branchConns = conns?.filter((c: any) => String(c.branch_id).trim() === branchIdStr) || [];
+        const branchConns = conns?.filter((c: any) => String(c.رقم_الفرع).trim() === branchIdStr) || [];
         
         // Find computer
         let comp = null;

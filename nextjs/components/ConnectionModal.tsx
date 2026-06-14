@@ -64,12 +64,16 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
     setIsSaving(true);
     try {
       const branchIdToSave = mode === 'add' ? selectedBranchId : connection.رقم_الفرع;
-      const payload = {
-        branch_id: branchIdToSave,
-        رقم_الفرع: branchIdToSave, // Keep for backward compatibility
+      const payload: any = {
+        رقم_الفرع: branchIdToSave,
         ...formData,
         تاريخ_التحديث: new Date().toISOString()
       };
+
+      // Clean up empty strings for dates/numbers to avoid Supabase errors
+      if (!payload.تاريخ_الشراء) payload.تاريخ_الشراء = null;
+      if (!payload.تاريخ_الانتهاء) payload.تاريخ_الانتهاء = null;
+      if (!payload.التكلفة) payload.التكلفة = null;
 
       if (mode === 'edit' && connection?.connection_id) {
         const { error } = await (supabase as any)
@@ -86,9 +90,8 @@ export default function ConnectionModal({ mode, branches, connection, onClose, o
       
       onSaved();
       onClose();
-    } catch (error) {
-      console.error('Error saving connection:', error);
-      alert('حدث خطأ أثناء الحفظ.');
+    } catch (error: any) {
+      alert('تفاصيل الخطأ: ' + (error?.message || JSON.stringify(error)));
     } finally {
       setIsSaving(false);
     }
